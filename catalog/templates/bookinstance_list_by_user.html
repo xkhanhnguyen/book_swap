@@ -1,41 +1,37 @@
 {% extends "base_generic.html" %}
+{% block title %}My Books — BookSwap{% endblock %}
 
 {% block content %}
-  <h1>All Books</h1>
+<div class="page-header">
+  <div>
+    <h1>My Books</h1>
+    <p style="font-size:13px; color:var(--text-muted); margin-top:4px">Copies you've listed for swap</p>
+  </div>
+  <a href="{% url 'books' %}" class="btn btn-primary btn-sm">+ Add a book</a>
+</div>
 
-  {% if bookinstance_list %}
-    <ul>
-      {% for book_instance in bookinstance_list %}
-        <li>
-          <strong>{{ book_instance.book.title }}</strong> 
-          {% if book_instance.due_back %}
-            (Due back: {{ book_instance.due_back }})
-          {% else %}
-            (Available)
-          {% endif %}
-        </li>
-      {% endfor %}
-    </ul>
-
-    <!-- Pagination controls -->
-    {% if is_paginated %}
-      <div class="pagination">
-        {% if page_obj.has_previous %}
-          <a href="?page=1">First</a>
-          <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
-        {% endif %}
-
-        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-
-        {% if page_obj.has_next %}
-          <a href="?page={{ page_obj.next_page_number }}">Next</a>
-          <a href="?page={{ page_obj.paginator.num_pages }}">Last</a>
-        {% endif %}
+{% if bookinstance_list %}
+<div style="display:flex; flex-direction:column; gap:1px; background:var(--border); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden">
+  {% for copy in bookinstance_list %}
+  <div style="background:var(--surface); padding:16px 20px; display:flex; align-items:center; gap:16px">
+    <div style="flex:1">
+      <a href="{% url 'book-detail' copy.book.pk %}" style="font-size:15px; font-weight:500; color:var(--text)">{{ copy.book.title }}</a>
+      <div style="font-size:13px; color:var(--text-muted); margin-top:3px; display:flex; gap:12px">
+        {% if copy.get_condition_display %}<span>{{ copy.get_condition_display }}</span>{% endif %}
+        {% if copy.get_type_display %}<span>{{ copy.get_type_display }}</span>{% endif %}
+        <span>Listed {{ copy.date_posted }}</span>
       </div>
-    {% endif %}
-
-  {% else %}
-    <p>No books available.</p>
-  {% endif %}
-
+    </div>
+    <span class="status-badge {% if copy.status == 'a' %}status-available{% else %}status-unavailable{% endif %}">
+      {{ copy.get_status_display }}
+    </span>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <p>You haven't listed any books yet.</p>
+  <a href="{% url 'books' %}" class="btn btn-primary">Browse books to list</a>
+</div>
+{% endif %}
 {% endblock %}

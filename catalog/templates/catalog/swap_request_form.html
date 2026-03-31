@@ -1,0 +1,38 @@
+{% extends "base_generic.html" %}
+{% block title %}Request Swap — BookSwap{% endblock %}
+
+{% block content %}
+<div class="book-detail">
+  <div style="margin-bottom:24px">
+    <a href="{% url 'book-detail' book_instance.book.pk %}" class="text-muted" style="font-size:14px">← Back to book</a>
+  </div>
+
+  <h1 style="font-size:22px; margin-bottom:8px">Request Swap</h1>
+  <p style="margin-bottom:32px">You are requesting to swap for <strong style="color:var(--text)">{{ book_instance.book.title }}</strong> from <strong style="color:var(--text)">{{ book_instance.user.get_full_name|default:book_instance.user.username }}</strong>.</p>
+
+  <div class="card" style="max-width:480px; margin-bottom:24px">
+    <div class="card-body">
+      <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px">
+        <span style="color:var(--text-muted)">Cost</span>
+        <span style="color:var(--accent); font-weight:500">10 points</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:14px">
+        <span style="color:var(--text-muted)">Your balance</span>
+        <span>{{ request.user.profile.points }} points</span>
+      </div>
+    </div>
+  </div>
+
+  <form method="post" style="max-width:480px">
+    {% csrf_token %}
+    <div class="form-group">
+      <label>Message to owner <span style="color:var(--text-muted)">(optional)</span></label>
+      <textarea name="message" class="form-control" rows="3" placeholder="Hi! I'd love to swap this book..."></textarea>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:24px">
+      <button type="submit" class="btn btn-primary">Confirm Request</button>
+      <a href="{% url 'book-detail' book_instance.book.pk %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

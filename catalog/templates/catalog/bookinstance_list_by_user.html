@@ -1,24 +1,37 @@
 {% extends "base_generic.html" %}
+{% block title %}My Books — BookSwap{% endblock %}
 
 {% block content %}
+<div class="page-header">
+  <div>
     <h1>My Books</h1>
+    <p style="font-size:13px; color:var(--text-muted); margin-top:4px">Copies you've listed for swap</p>
+  </div>
+  <a href="{% url 'books' %}" class="btn btn-primary btn-sm">+ Add a book</a>
+</div>
 
-    <!-- {% if bookinstance_list %}
-    <ul>
-
-      {% for bookinst in bookinstance_list %}
-      <li class="{% if bookinst.days_since_posted %}text-danger{% endif %}">
-        <a href="{% url 'book-detail' bookinst.book.pk %}">{{ bookinst.book.title }}</a> ({{ bookinst.date_posted }})
-        <a>{{ bookinst.status}}</a> 
-         {% if perms.catalog.can_mark_returned %}- <a href="{% url 'renew-book-librarian' bookinst.id %}">Renew</a>{% endif %} 
-      </li>
-      {% endfor %} -->
-      
-      <p><a class="dropdown-item" href="{% url 'book-create' %}">Add a book to swap?</a></p>
-    </ul>
-
-    {% else %}
-      <p>There are no books to swap.</p>
-      <p><a class="dropdown-item" href="{% url 'book-create' %}">Add a book to swap?</a></p>
-    {% endif %}
+{% if bookinstance_list %}
+<div style="display:flex; flex-direction:column; gap:1px; background:var(--border); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden">
+  {% for copy in bookinstance_list %}
+  <div style="background:var(--surface); padding:16px 20px; display:flex; align-items:center; gap:16px">
+    <div style="flex:1">
+      <a href="{% url 'book-detail' copy.book.pk %}" style="font-size:15px; font-weight:500; color:var(--text)">{{ copy.book.title }}</a>
+      <div style="font-size:13px; color:var(--text-muted); margin-top:3px; display:flex; gap:12px; flex-wrap:wrap">
+        {% if copy.get_condition_display %}<span>{{ copy.get_condition_display }}</span>{% endif %}
+        {% if copy.get_type_display %}<span>{{ copy.get_type_display }}</span>{% endif %}
+        <span>Listed {{ copy.date_posted }}</span>
+      </div>
+    </div>
+    <span class="status-badge {% if copy.status == 'a' %}status-available{% else %}status-unavailable{% endif %}">
+      {{ copy.get_status_display }}
+    </span>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <p>You haven't listed any books yet.</p>
+  <a href="{% url 'books' %}" class="btn btn-primary">Browse books to list</a>
+</div>
+{% endif %}
 {% endblock %}

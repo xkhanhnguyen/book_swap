@@ -4,20 +4,32 @@
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>Popular Books</h1>
-    <p style="font-size:13px; color:var(--text-muted); margin-top:4px">Ranked by popularity on Open Library</p>
+    <h1>Books</h1>
+    <p style="font-size:13px; color:var(--text-muted); margin-top:4px">Ranked by popularity · Best Books Ever</p>
   </div>
   {% if user.is_authenticated %}
   <a href="{% url 'book-create' %}" class="btn btn-primary btn-sm">+ Add a Book</a>
   {% endif %}
 </div>
 
+<!-- Filter bar -->
+<div style="display:flex; align-items:center; gap:10px; margin-bottom:24px">
+  <a href="{% url 'books' %}" class="btn btn-sm {% if not request.GET.available %}btn-primary{% else %}btn-secondary{% endif %}">All books</a>
+  <a href="{% url 'books' %}?available=1" class="btn btn-sm {% if request.GET.available %}btn-primary{% else %}btn-secondary{% endif %}">
+    Available to swap
+  </a>
+</div>
+
 {% if book_list %}
 <div class="book-grid">
   {% for book in book_list %}
-  <a href="{{ book.get_absolute_url }}" class="book-card" style="text-decoration:none">
+  <a href="{{ book.get_absolute_url }}" class="book-card" style="text-decoration:none; position:relative">
+
     {% if book.cover_url %}
-    <img src="{{ book.cover_url }}" alt="{{ book.title }}" style="width:100%; height:160px; object-fit:cover; border-radius:4px; margin-bottom:8px; background:var(--surface2)">
+    <img src="{{ book.cover_url }}" alt="{{ book.title }}"
+      style="width:100%; height:160px; object-fit:cover; border-radius:4px; margin-bottom:8px; background:var(--surface2)"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div style="display:none; width:100%; height:160px; background:var(--surface2); border-radius:4px; margin-bottom:8px; align-items:center; justify-content:center; color:var(--text-muted); font-size:12px">No Cover</div>
     {% else %}
     <div style="width:100%; height:160px; background:var(--surface2); border-radius:4px; margin-bottom:8px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:12px">No Cover</div>
     {% endif %}
@@ -38,14 +50,25 @@
       {% endfor %}
     </div>
     {% endif %}
+
+    {% if book.available_copies > 0 %}
+    <div style="margin-top:8px">
+      <span style="font-size:12px; color:#6dc96d; background:rgba(100,200,100,0.08); border:1px solid rgba(100,200,100,0.2); border-radius:20px; padding:3px 10px">
+        {{ book.available_copies }} available
+      </span>
+    </div>
+    {% endif %}
+
   </a>
   {% endfor %}
 </div>
 {% else %}
 <div class="empty-state">
-  <p>No books yet. Run <code>python manage.py import_books</code> to import from Open Library.</p>
-  {% if user.is_authenticated %}
-  <a href="{% url 'book-create' %}" class="btn btn-primary">Add a book manually</a>
+  {% if request.GET.available %}
+  <p>No books available to swap yet.</p>
+  <a href="{% url 'books' %}" class="btn btn-secondary">View all books</a>
+  {% else %}
+  <p>No books yet.</p>
   {% endif %}
 </div>
 {% endif %}

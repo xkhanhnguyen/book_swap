@@ -1,0 +1,66 @@
+{% extends "base_generic.html" %}
+{% block title %}My Swaps — BookSwap{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:40px">
+  <div>
+    <h1>My Swaps</h1>
+    <p style="font-size:13px; color:var(--text-muted); margin-top:4px">Manage your swap requests and track activity</p>
+  </div>
+  <div style="text-align:right">
+    <div style="font-size:24px; font-weight:300; color:var(--accent)">{{ request.user.profile.points }}</div>
+    <div style="font-size:12px; color:var(--text-muted)">points</div>
+  </div>
+</div>
+
+<!-- Requests I received -->
+<div style="margin-bottom:48px">
+  <h3 style="font-size:14px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:16px">Requests for my books ({{ received.count }})</h3>
+  {% for swap in received %}
+  <a href="{% url 'swap-detail' swap.pk %}" style="text-decoration:none; display:block">
+    <div class="copy-item">
+      <div style="flex:1">
+        <div style="font-size:15px; font-weight:500; color:var(--text); margin-bottom:4px">{{ swap.book_instance.book.title }}</div>
+        <div style="font-size:13px; color:var(--text-muted)">from {{ swap.requester.get_full_name|default:swap.requester.username }} · {{ swap.created_at|date:"M d, Y" }}</div>
+      </div>
+      <span class="status-badge {% if swap.status == 'completed' %}status-available{% elif swap.status == 'rejected' %}status-unavailable{% else %}status-maintenance{% endif %}">{{ swap.get_status_display }}</span>
+    </div>
+  </a>
+  {% empty %}
+  <p style="color:var(--text-muted); font-size:14px">No one has requested your books yet.</p>
+  {% endfor %}
+</div>
+
+<!-- Requests I sent -->
+<div style="margin-bottom:48px">
+  <h3 style="font-size:14px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:16px">My requests ({{ sent.count }})</h3>
+  {% for swap in sent %}
+  <a href="{% url 'swap-detail' swap.pk %}" style="text-decoration:none; display:block">
+    <div class="copy-item">
+      <div style="flex:1">
+        <div style="font-size:15px; font-weight:500; color:var(--text); margin-bottom:4px">{{ swap.book_instance.book.title }}</div>
+        <div style="font-size:13px; color:var(--text-muted)">{{ swap.points_spent }} pts spent · {{ swap.created_at|date:"M d, Y" }}</div>
+      </div>
+      <span class="status-badge {% if swap.status == 'completed' %}status-available{% elif swap.status == 'rejected' %}status-unavailable{% else %}status-maintenance{% endif %}">{{ swap.get_status_display }}</span>
+    </div>
+  </a>
+  {% empty %}
+  <p style="color:var(--text-muted); font-size:14px">You haven't requested any swaps yet. <a href="{% url 'books' %}" style="color:var(--text-secondary); text-decoration:underline">Browse books</a></p>
+  {% endfor %}
+</div>
+
+<!-- Point history -->
+<div>
+  <h3 style="font-size:14px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:16px">Recent point activity</h3>
+  {% for tx in transactions %}
+  <div class="copy-item">
+    <div style="flex:1; font-size:14px; color:var(--text-secondary)">{{ tx.description }}</div>
+    <span style="font-size:14px; font-weight:500; color:{% if tx.amount > 0 %}#6dc96d{% else %}#c96d6d{% endif %}">
+      {% if tx.amount > 0 %}+{% endif %}{{ tx.amount }} pts
+    </span>
+  </div>
+  {% empty %}
+  <p style="color:var(--text-muted); font-size:14px">No point activity yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

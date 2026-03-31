@@ -81,12 +81,17 @@ class UpdateUserForm(forms.ModelForm):
 
 class UpdateProfileForm(forms.ModelForm):
     """to let users update their profile"""
-    avatar = forms.ImageField(widget=forms.FileInput(attrs={'class': 'form-control-file'}))
-    bio = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 5}))
+    avatar = forms.ImageField(widget=forms.FileInput(attrs={'class': 'form-control-file'}), required=False)
+    bio = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}), required=False)
+    city = forms.CharField(
+        max_length=200, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Ho Chi Minh City, Vietnam'}),
+        help_text='Used to show distance to other users'
+    )
 
     class Meta:
         model = Profile
-        fields = ['avatar', 'bio']
+        fields = ['avatar', 'bio', 'city']
 
 # Password Change Form
 class CustomPasswordChangeForm(PasswordChangeForm):

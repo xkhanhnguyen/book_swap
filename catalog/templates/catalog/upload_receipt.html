@@ -1,0 +1,26 @@
+{% extends "base_generic.html" %}
+{% block title %}Upload Receipt — BookSwap{% endblock %}
+
+{% block content %}
+<div class="book-detail">
+  <div style="margin-bottom:24px">
+    <a href="{% url 'swap-detail' swap.pk %}" class="text-muted" style="font-size:14px">← Back to swap</a>
+  </div>
+
+  <h1 style="font-size:22px; margin-bottom:8px">Upload Shipping Receipt</h1>
+  <p style="margin-bottom:32px">Upload a photo of your shipping receipt for <strong style="color:var(--text)">{{ swap.book_instance.book.title }}</strong>. You'll earn <strong style="color:var(--accent)">10 points</strong> once submitted.</p>
+
+  <form method="post" enctype="multipart/form-data" style="max-width:480px">
+    {% csrf_token %}
+    <div class="form-group">
+      <label>Receipt image</label>
+      <input type="file" name="receipt_image" accept="image/*" class="form-control" required>
+      <div style="font-size:12px; color:var(--text-muted); margin-top:6px">Accepted: JPG, PNG, HEIC. Photo should clearly show the tracking number and shipping date.</div>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:24px">
+      <button type="submit" class="btn btn-primary">Submit Receipt (+10 pts)</button>
+      <a href="{% url 'swap-detail' swap.pk %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

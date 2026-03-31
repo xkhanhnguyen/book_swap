@@ -9,6 +9,20 @@ from django.forms import ModelForm
 
 from catalog.models import BookInstance
 
+
+class AddCopyForm(forms.ModelForm):
+    class Meta:
+        model = BookInstance
+        fields = ['condition', 'type', 'imprint']
+        widgets = {
+            'condition': forms.Select(attrs={'class': 'form-control'}),
+            'type':      forms.Select(attrs={'class': 'form-control'}),
+            'imprint':   forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Penguin Classics, 2003 (optional)'}),
+        }
+        labels = {
+            'imprint': 'Edition / Publisher',
+        }
+
 class RenewBookForm(forms.Form):
     renewal_date = forms.DateField(help_text="Enter a date between now and 4 weeks (default 3). For practice only, need to update this to sth")
     

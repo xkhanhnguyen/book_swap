@@ -1,0 +1,84 @@
+{% extends "base_generic.html" %}
+{% block title %}Swap #{{ swap.id }} — BookSwap{% endblock %}
+
+{% block content %}
+<div class="book-detail">
+  <div style="margin-bottom:24px">
+    <a href="{% url 'my-swaps' %}" class="text-muted" style="font-size:14px">← My Swaps</a>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:32px">
+    <h1 style="font-size:22px">{{ swap.book_instance.book.title }}</h1>
+    <span class="status-badge {% if swap.status == 'completed' %}status-available{% elif swap.status == 'rejected' %}status-unavailable{% elif swap.status == 'accepted' %}status-maintenance{% else %}status-maintenance{% endif %}">
+      {{ swap.get_status_display }}
+    </span>
+  </div>
+
+  <!-- Parties -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:40px">
+    <div class="card">
+      <div class="card-body">
+        <div style="font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:8px">Requester</div>
+        <div style="font-size:15px; font-weight:500">{{ swap.requester.get_full_name|default:swap.requester.username }}</div>
+        {% if swap.requester.profile.city %}<div style="font-size:13px; color:var(--text-muted)">{{ swap.requester.profile.city }}</div>{% endif %}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div style="font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:8px">Owner</div>
+        <div style="font-size:15px; font-weight:500">{{ swap.book_instance.user.get_full_name|default:swap.book_instance.user.username }}</div>
+        {% if swap.book_instance.user.profile.city %}<div style="font-size:13px; color:var(--text-muted)">{{ swap.book_instance.user.profile.city }}</div>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if swap.message %}
+  <div style="margin-bottom:32px">
+    <div style="font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:8px">Message</div>
+    <p style="color:var(--text-secondary)">{{ swap.message }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Owner actions -->
+  {% if is_owner and swap.status == 'pending' %}
+  <div style="display:flex; gap:10px; margin-bottom:40px; padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius)">
+    <span style="flex:1; font-size:14px; color:var(--text-secondary)">Respond to this swap request:</span>
+    <form method="post" style="display:inline">{% csrf_token %}
+      <button name="action" value="accept" class="btn btn-primary btn-sm">Accept</button>
+    </form>
+    <form method="post" style="display:inline">{% csrf_token %}
+      <button name="action" value="reject" class="btn btn-secondary btn-sm">Reject</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <!-- Shipping receipts -->
+  {% if swap.status == 'accepted' or swap.status == 'completed' %}
+  <div class="copies-section">
+    <h3>Shipping Receipts</h3>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px">Both parties must ship their books and upload proof to earn 10 points each.</p>
+
+    {% for receipt in receipts %}
+    <div class="copy-item">
+      <div style="flex:1">
+        <div style="font-size:14px; font-weight:500; margin-bottom:2px">{{ receipt.uploaded_by.get_full_name|default:receipt.uploaded_by.username }}</div>
+        <div style="font-size:13px; color:var(--text-muted)">Uploaded {{ receipt.created_at|date:"M d, Y" }}</div>
+      </div>
+      <span class="status-badge status-available">+{{ receipt.points_awarded }} pts</span>
+    </div>
+    {% empty %}
+    <p style="color:var(--text-muted); font-size:14px; padding:16px 0">No receipts uploaded yet.</p>
+    {% endfor %}
+
+    {% if is_owner and not user_has_receipt %}
+    <div style="margin-top:24px">
+      <a href="{% url 'upload-receipt' swap.pk %}" class="btn btn-primary">Upload Shipping Receipt (+10 pts)</a>
+    </div>
+    {% elif is_requester and not receipts %}
+    <div style="margin-top:16px; font-size:13px; color:var(--text-muted)">Waiting for the owner to ship and upload their receipt.</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

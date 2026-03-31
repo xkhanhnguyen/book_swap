@@ -29,14 +29,27 @@
 
   <!-- Swap Offers -->
   <div class="copies-section">
-    <h3>Available to Swap ({{ swap_offers.count }})</h3>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px">
+      <h3 style="margin-bottom:0">Available to Swap ({{ swap_offers|length }})</h3>
+      {% if user.is_authenticated %}
+      <a href="{% url 'add-copy' book.pk %}" class="btn btn-secondary btn-sm">+ I have this book</a>
+      {% endif %}
+    </div>
 
     {% if swap_offers %}
-      {% for copy in swap_offers %}
+      {% for offer in swap_offers %}
+      {% with copy=offer.copy dist=offer.distance_km %}
       <div class="copy-item">
         <div style="flex:1">
-          <div style="font-size:14px; color:var(--text); margin-bottom:4px">
+          <div style="font-size:14px; color:var(--text); margin-bottom:4px; display:flex; align-items:center; gap:10px">
             <strong>{{ copy.user.get_full_name|default:copy.user.username }}</strong>
+            {% if dist is not None %}
+            <span style="font-size:12px; color:var(--accent); background:rgba(200,169,110,0.1); border:1px solid rgba(200,169,110,0.2); border-radius:20px; padding:2px 8px">
+              {{ dist|floatformat:0 }} km away
+            </span>
+            {% elif copy.user.profile.city %}
+            <span style="font-size:12px; color:var(--text-muted)">{{ copy.user.profile.city }}</span>
+            {% endif %}
           </div>
           <div style="font-size:13px; color:var(--text-muted); display:flex; gap:12px; flex-wrap:wrap">
             {% if copy.get_condition_display %}<span>{{ copy.get_condition_display }}</span>{% endif %}
@@ -45,11 +58,16 @@
           </div>
         </div>
         {% if user.is_authenticated %}
-        <a href="mailto:{{ copy.user.email }}" class="btn btn-secondary btn-sm">Request Swap</a>
+          {% if copy.user == user %}
+          <span style="font-size:13px; color:var(--text-muted)">Your copy</span>
+          {% else %}
+          <a href="{% url 'request-swap' copy.id %}" class="btn btn-primary btn-sm">Request Swap <span style="opacity:0.6; font-size:11px">(10 pts)</span></a>
+          {% endif %}
         {% else %}
-        <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-secondary btn-sm">Sign in to request</a>
+        <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-secondary btn-sm">Sign in to swap</a>
         {% endif %}
       </div>
+      {% endwith %}
       {% endfor %}
     {% else %}
       <div style="padding: 32px 0; color: var(--text-muted); font-size:14px">

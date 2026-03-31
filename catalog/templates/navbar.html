@@ -15,10 +15,14 @@
       </form>
 
       {% if user.is_authenticated %}
+      <a href="{% url 'my-swaps' %}" style="font-size:13px; color:var(--accent); padding:6px 10px; border:1px solid rgba(200,169,110,0.3); border-radius:var(--radius)">
+        {{ user.profile.points }} pts
+      </a>
       <div class="dropdown">
-        <button class="dropdown-toggle">{{ user.get_username }} <i class="fa fa-chevron-down" style="font-size:10px"></i></button>
+        <button class="dropdown-toggle" onclick="var d=this.closest('.dropdown');d.classList.toggle('open');event.stopPropagation()">{{ user.get_username }} <i class="fa fa-chevron-down" style="font-size:10px"></i></button>
         <div class="dropdown-menu">
-          <a href="{% url 'all-books' %}">My Books</a>
+          <a href="{% url 'my-swaps' %}">My Swaps</a>
+          <a href="{% url 'my-swapped-book' %}">My Books</a>
           <a href="{% url 'account-settings' %}">Settings</a>
           <div class="dropdown-divider"></div>
           <a href="{% url 'logout' %}">Sign out</a>

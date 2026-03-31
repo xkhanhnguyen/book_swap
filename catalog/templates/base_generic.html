@@ -47,5 +47,10 @@
     </div>
   </footer>
 
+<script>
+  document.addEventListener('click', function() {
+    document.querySelectorAll('.dropdown.open').forEach(function(d) { d.classList.remove('open'); });
+  });
+</script>
 </body>
 </html>

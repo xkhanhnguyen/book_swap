@@ -74,7 +74,7 @@ class BookInstance(models.Model):
     """Model representing a specific copy of a book (i.e. that can be borrowed from the library)."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, help_text='Unique ID for this particular book across whole library')
     book = models.ForeignKey('Book', on_delete=models.RESTRICT, null=True)
-    imprint = models.CharField(max_length=200)
+    imprint = models.CharField(max_length=200, blank=True, default='')
     date_posted = models.DateField(("Date"), default=datetime.date.today)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -132,6 +132,58 @@ class BookInstance(models.Model):
         """Determines how many days since the book posted based on posted date and current date."""
         return bool(self.date_posted and date.today() > self.date_posted)
 
+
+
+class SwapRequest(models.Model):
+    """A request by one user to swap a specific book copy."""
+    STATUS_CHOICES = [
+        ('pending',   'Pending'),
+        ('accepted',  'Accepted'),
+        ('rejected',  'Rejected'),
+        ('completed', 'Completed'),
+    ]
+    requester     = models.ForeignKey(User, on_delete=models.CASCADE, related_name='swap_requests_sent')
+    book_instance = models.ForeignKey(BookInstance, on_delete=models.CASCADE, related_name='swap_requests')
+    status        = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    message       = models.TextField(blank=True, default='')
+    points_spent  = models.IntegerField(default=10)
+    created_at    = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.requester} → {self.book_instance.book.title} ({self.status})'
+
+    def get_absolute_url(self):
+        return reverse('swap-detail', args=[str(self.id)])
+
+
+class ShippingReceipt(models.Model):
+    """Proof of shipping uploaded by a user to earn points."""
+    swap_request   = models.ForeignKey(SwapRequest, on_delete=models.CASCADE, related_name='receipts')
+    uploaded_by    = models.ForeignKey(User, on_delete=models.CASCADE, related_name='receipts')
+    receipt_image  = models.ImageField(upload_to='receipts/')
+    points_awarded = models.IntegerField(default=10)
+    approved       = models.BooleanField(default=False)
+    created_at     = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Receipt by {self.uploaded_by} for {self.swap_request}'
+
+
+class PointTransaction(models.Model):
+    """Audit log for every point change."""
+    user       = models.ForeignKey(User, on_delete=models.CASCADE, related_name='point_transactions')
+    amount     = models.IntegerField()   # positive = earned, negative = spent
+    description = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.user} {self.amount:+d} — {self.description}'
 
 
 class Author(models.Model):

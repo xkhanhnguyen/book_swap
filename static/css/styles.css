@@ -214,7 +214,7 @@ main {
   z-index: 200;
 }
 
-.dropdown:hover .dropdown-menu {
+.dropdown.open .dropdown-menu {
   display: block;
 }
 
