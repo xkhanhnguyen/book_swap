@@ -61,34 +61,42 @@ def index(request):
 class BookListView(generic.ListView):
     """Generic class-based view for a list of books."""
     model = Book
-    paginate_by = 10 # reducing the number of items displayed on each page
+    paginate_by = 20
+    context_object_name = 'book_list'
 
-    context_object_name = 'book_list'   # your own name for the list as a template variable
-    # template_name = 'books/list.html'  # Specify your own template name/location
-    # def get_queryset(self):
-    #     return Book.objects.filter(title__icontains='war')[:5] # Get 5 books containing the title war
-    
-    # def get_context_data(self, **kwargs):
-    #     # Call the base implementation first to get the context
-    #     context = super(BookListView, self).get_context_data(**kwargs)
-    #     # Create any data and add it to the context
-    #     context['some_data'] = 'This is just some data'
-    #     return context
+    def get_queryset(self):
+        return Book.objects.order_by('popularity_rank', 'title')
     
 
 class BookDetailView(generic.DetailView):
     """Generic class-based detail view for a book."""
     model = Book
 
-    def book_detail_view(request, primary_key):
-        book = get_object_or_404(Book, pk=primary_key)
-        return render(request, 'catalog/book_detail.html', context={'book': book})
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['swap_offers'] = (
+            BookInstance.objects
+            .filter(book=self.object, status='a')
+            .select_related('user')
+            .order_by('date_posted')
+        )
+        return context
     
 
 class AuthorListView(generic.ListView):
     """Generic class-based list view for a list of authors."""
     model = Author
-    paginate_by = 10 # reducing the number of items displayed on each page
+    paginate_by = 20
+
+    def get_queryset(self):
+        from django.db.models import Min
+        return (
+            Author.objects
+            .filter(book__isnull=False)
+            .annotate(best_rank=Min('book__popularity_rank'))
+            .order_by('best_rank', 'last_name')
+            .distinct()
+        )
 
 class AuthorDetailView(generic.DetailView):
     """Generic class-based detail view for an author."""

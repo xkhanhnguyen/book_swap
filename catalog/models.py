@@ -42,9 +42,10 @@ class Book(models.Model):
     # Author is a string rather than an object because it hasn't been declared yet in the file
     author = models.ForeignKey('Author', on_delete=models.SET_NULL, null=True)
 
-    summary = models.TextField(max_length=1000, help_text='Enter a brief description of the book')
-    # isbn = models.CharField('ISBN', max_length=13, unique=True,
-    #                          help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn">ISBN number</a>')
+    summary = models.TextField(blank=True, default='', help_text='Enter a brief description of the book')
+
+    cover_url = models.URLField(blank=True, default='')
+    popularity_rank = models.IntegerField(null=True, blank=True, help_text='Rank from Open Library trending (lower = more popular)')
 
     # ManyToManyField used because genre can contain many books. Books can cover many genres.
     # Genre class has already been defined so we can specify the object above.

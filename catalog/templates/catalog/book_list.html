@@ -1,24 +1,52 @@
 {% extends "base_generic.html" %}
+{% block title %}Books — BookSwap{% endblock %}
 
 {% block content %}
-  {% load static %}
-  <link rel="stylesheet" href="{% static 'css/book_form.css' %}" />
-
-  <h1>Book List</h1>
-
-  {% if book_list %}
-    <ul>
-      {% for book in book_list %}
-      <li>
-        <a href="{{ book.get_absolute_url }}">{{ book.title }}</a>
-        ({{ book.author }})
-      </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>There are no books to swap.</p>
-    <div class="button-container">
-      <a href="{% url 'book-create' %}" class="add-book-button">Add a Book to Swap</a>
-    </div>
+<div class="page-header">
+  <div>
+    <h1>Popular Books</h1>
+    <p style="font-size:13px; color:var(--text-muted); margin-top:4px">Ranked by popularity on Open Library</p>
+  </div>
+  {% if user.is_authenticated %}
+  <a href="{% url 'book-create' %}" class="btn btn-primary btn-sm">+ Add a Book</a>
   {% endif %}
+</div>
+
+{% if book_list %}
+<div class="book-grid">
+  {% for book in book_list %}
+  <a href="{{ book.get_absolute_url }}" class="book-card" style="text-decoration:none">
+    {% if book.cover_url %}
+    <img src="{{ book.cover_url }}" alt="{{ book.title }}" style="width:100%; height:160px; object-fit:cover; border-radius:4px; margin-bottom:8px; background:var(--surface2)">
+    {% else %}
+    <div style="width:100%; height:160px; background:var(--surface2); border-radius:4px; margin-bottom:8px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:12px">No Cover</div>
+    {% endif %}
+
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px">
+      <div class="book-card-title">{{ book.title }}</div>
+      {% if book.popularity_rank %}
+      <span style="font-size:11px; color:var(--text-muted); white-space:nowrap; margin-top:2px">#{{ book.popularity_rank }}</span>
+      {% endif %}
+    </div>
+
+    <div class="book-card-author">{{ book.author }}</div>
+
+    {% if book.genre.all %}
+    <div class="book-card-meta">
+      {% for genre in book.genre.all|slice:":2" %}
+      <span class="tag">{{ genre }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <p>No books yet. Run <code>python manage.py import_books</code> to import from Open Library.</p>
+  {% if user.is_authenticated %}
+  <a href="{% url 'book-create' %}" class="btn btn-primary">Add a book manually</a>
+  {% endif %}
+</div>
+{% endif %}
 {% endblock %}

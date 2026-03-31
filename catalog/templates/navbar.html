@@ -1,79 +1,33 @@
+{% load static %}
 <nav class="navbar">
-    <div class="container">
-        <!-- Bookswap on the Left -->
-        <div class="header-text text-left">
-            <h1>Bookswap</h1>
-            <small>Swap Your Old Books For Exciting New Reads</small>
-        </div>
+  <div class="navbar-inner">
+    <a href="{% url 'index' %}" class="navbar-brand">BookSwap</a>
 
-        <div class="navbar-menu" id="open-navbar1">
-            <ul class="navbar-nav">
-              <li class="active"><a href="{% url 'index' %}">Home</a></li>
-              <li class="active"><a href="{% url 'books' %}">Books</a></li>
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
-                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                     Browse <i>&#9662;</i> <!--small down arrow -->
-                    
-                </a>
-                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                    <a class="dropdown-item" href="#">Recommendations</a>
-                    <a class="dropdown-item" href="#">Recently added</a>
-                    <a class="dropdown-item" href="#">Most offered</a>
-                </div>
-               </li>
-            </ul>
-
-             <!-- User Authentication and Cart -->
-             <ul class="navbar-nav">
-                {% if user.is_authenticated %}
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        {{ user.get_username }}
-                    </a>
-                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <a class="dropdown-item" href="#">Profile</a>
-                        <a class="dropdown-item" href="{% url 'all-books' %}">My Books</a>
-                        <!-- <div class="dropdown-divider"></div> -->
-                        <a class="dropdown-item" href="{% url 'account-settings' %}">Account Settings</a>
-                        <a class="dropdown-item" href="#">Help</a>
-                        <a class="dropdown-item" href="{% url 'logout' %}">Sign out</a>
-                        <!-- <form method="post" action="{% url 'logout' %}">
-                            {% csrf_token %}
-                            <button type="submit" style="background-color: transparent !important; border: none !important;" class="dropdown-item">Sign out</button>
-                        </form> -->
-
-                        <!-- text-decoration: none;
-                        color: var(--text-light-grey);
-                        transition: color 0.3s ease; -->
-                    </div>
-                </li>
-                {% else %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'login' %}?next={{ request.path }}">Sign in</a>
-                </li>
-                {% endif %}
-
-                {% if user.is_staff %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'all-books' %}">All Books</a>
-                </li>
-                {% endif %}
-
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'cart' %}">
-                        <i class="fas fa-shopping-cart"></i> <span id="cart-total">0</span>
-                    </a>
-                </li>
-            </ul>
-            
-             <!-- Search Form -->
-             <form method="get" class="form-inline my-2 my-lg-0 ml-auto" action="{% url 'search-results' %}">
-                <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" name="search_query">
-                <button class="btn" type="submit">
-                    <img src="../../static/images/search.png">
-                </button>
-            </form>
-        </div>
+    <div class="navbar-links">
+      <a href="{% url 'books' %}">Books</a>
+      <a href="{% url 'authors' %}">Authors</a>
     </div>
+
+    <div class="navbar-right">
+      <form method="get" class="search-form" action="{% url 'search-results' %}">
+        <input type="search" name="search_query" placeholder="Search books…" />
+        <button type="submit"><i class="fa fa-search" style="font-size:13px"></i></button>
+      </form>
+
+      {% if user.is_authenticated %}
+      <div class="dropdown">
+        <button class="dropdown-toggle">{{ user.get_username }} <i class="fa fa-chevron-down" style="font-size:10px"></i></button>
+        <div class="dropdown-menu">
+          <a href="{% url 'all-books' %}">My Books</a>
+          <a href="{% url 'account-settings' %}">Settings</a>
+          <div class="dropdown-divider"></div>
+          <a href="{% url 'logout' %}">Sign out</a>
+        </div>
+      </div>
+      {% else %}
+      <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-secondary btn-sm">Sign in</a>
+      <a href="{% url 'users-register' %}" class="btn btn-primary btn-sm">Sign up</a>
+      {% endif %}
+    </div>
+  </div>
 </nav>

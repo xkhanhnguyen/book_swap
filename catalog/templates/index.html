@@ -1,49 +1,33 @@
 {% extends "base_generic.html" %}
-
+{% block title %}BookSwap — Swap Your Old Books{% endblock %}
 
 {% block content %}
-<h1>SWAP YOUR OLD BOOKS FOR EXCITING NEW READS</h1>
-<p style="font-family: Arial">
-  Get points for every books you offer and swap
-  And use points to get books you want!
-  (website developed by our beloved 😘
-  <em>Bree 🐕‍🦺</em>!)
-  </head>
-</p>
-<!-- Stats section -->
-<section id="stats" >
-  <h2 class="section-heading" data-outlines="Stats">STATS</h2>
-  <div class="all-items">
-    <div class="item">
-      <h2 class="number">{{ num_books }}</h2>
-      <h3 class="stats-sub-heading"></h3>
-      <p>Books Available</p>
-    </div>
-    <div class="item">
-      <h2 class="number">{{ num_instances }}</h2>
-      <h3 class="stats-sub-heading"></h3>
-      <p>Copies</p>
-    </div>
-    <div class="item">
-      <h2 class="number">{{ num_instances_available }}</h2>
-      <h3 class="stats-sub-heading"></h3>
-      <p>Copies available</p>
-    </div>
+<section class="hero">
+  <h1>Swap your old books<br>for <em>exciting new reads</em></h1>
+  <p>Earn points for every book you offer and use them to get the books you want.</p>
+  <div class="hero-actions">
+    {% if user.is_authenticated %}
+    <a href="{% url 'books' %}" class="btn btn-primary">Browse Books</a>
+    <a href="{% url 'book-create' %}" class="btn btn-secondary">Add a Book</a>
+    {% else %}
+    <a href="{% url 'users-register' %}" class="btn btn-primary">Get Started</a>
+    <a href="{% url 'books' %}" class="btn btn-secondary">Browse Books</a>
+    {% endif %}
   </div>
-  <p>The library has the following record counts:</p>
-  <ul>
-    <li><strong>Books:</strong> {{ num_books }}</li>
-    <li><strong>Copies:</strong> {{ num_instances }}</li>
-    <li><strong>Copies available:</strong> {{ num_instances_available }}</li>
-    <li><strong>Genre:<strong> {{ num_genre }}</li>
-    <li><strong>Authors:</strong> {{ num_authors }}</li>
-  </ul>
 </section>
-<!-- End stats section -->
-<p>
-  <a href="{% url 'login' %}" class="btn btn-dark">Get Started</a>
-</p>
-<p>
-  You have visited this page {{ num_visits }} time{{ num_visits|pluralize }}.
-</p>
+
+<div class="stats-grid">
+  <div class="stat-item">
+    <span class="stat-number">{{ num_books }}</span>
+    <div class="stat-label">Books</div>
+  </div>
+  <div class="stat-item">
+    <span class="stat-number">{{ num_instances_available }}</span>
+    <div class="stat-label">Available Copies</div>
+  </div>
+  <div class="stat-item">
+    <span class="stat-number">{{ num_authors }}</span>
+    <div class="stat-label">Authors</div>
+  </div>
+</div>
 {% endblock %}
