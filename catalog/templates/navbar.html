@@ -16,7 +16,7 @@
 
       {% if user.is_authenticated %}
       <a href="{% url 'my-swaps' %}" style="font-size:13px; color:var(--accent); padding:6px 10px; border:1px solid rgba(200,169,110,0.3); border-radius:var(--radius)">
-        {{ user.profile.points }} pts &nbsp;·&nbsp; {{ user.profile.credit_balance }} cr
+        {{ user.profile.credit_balance }} cr
       </a>
       {% if unread_notifications_count %}
       <a href="{% url 'notifications' %}" style="position:relative; font-size:13px; padding:6px 10px; color:var(--text-secondary)">

@@ -61,7 +61,7 @@
           {% if copy.user == user %}
           <span style="font-size:13px; color:var(--text-muted)">Your copy</span>
           {% else %}
-          <a href="{% url 'request-swap' copy.id %}" class="btn btn-primary btn-sm">Request Swap <span style="opacity:0.6; font-size:11px">(10 pts)</span></a>
+          <a href="{% url 'request-swap' copy.id %}" class="btn btn-primary btn-sm">Request Swap <span style="opacity:0.6; font-size:11px">(1 cr)</span></a>
           {% endif %}
         {% else %}
         <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-secondary btn-sm">Sign in to swap</a>

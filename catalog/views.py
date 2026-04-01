@@ -15,7 +15,7 @@ from django.utils import timezone
 from django.contrib import messages
 from extra_views import CreateWithInlinesView, InlineFormSetFactory
 
-from .models import Book, Author, BookInstance, Genre, SwapRequest, ShippingReceipt, PointTransaction, Notification
+from .models import Book, Author, BookInstance, Genre, SwapRequest, ShippingReceipt, CreditTransaction, Notification
 from catalog.forms import RenewBookForm, AddCopyForm
 
 
@@ -267,13 +267,8 @@ def request_swap(request, pk):
 
     profile = request.user.profile
 
-    # Check credits (must have ≥1 credit)
     if profile.credit_balance < 1:
         messages.error(request, "You need at least 1 credit to request a swap. Earn credits by shipping books.")
-        return redirect('book-detail', pk=book_instance.book.pk)
-
-    if profile.points < 10:
-        messages.error(request, "You need at least 10 points to request a swap.")
         return redirect('book-detail', pk=book_instance.book.pk)
 
     if SwapRequest.objects.filter(requester=request.user, book_instance=book_instance, status='pending').exists():
@@ -286,24 +281,18 @@ def request_swap(request, pk):
             requester=request.user,
             book_instance=book_instance,
             message=message,
-            points_spent=10,
         )
-        # Deduct 10 points
-        profile.points -= 10
-        # Deduct 1 credit
         profile.credit_balance -= 1
-        profile.save(update_fields=['points', 'credit_balance'])
+        profile.save(update_fields=['credit_balance'])
 
-        PointTransaction.objects.create(
+        CreditTransaction.objects.create(
             user=request.user,
-            amount=-10,
-            description=f'Swap request for "{book_instance.book.title}"',
+            amount=-1,
+            description=f'Requested swap for "{book_instance.book.title}"',
         )
 
-        # Notify the book owner
-        owner = book_instance.user
         Notification.objects.create(
-            user=owner,
+            user=book_instance.user,
             swap_request=swap,
             message=(
                 f'{request.user.profile.display_name} requested your copy of '
@@ -343,13 +332,11 @@ def swap_detail(request, pk):
         elif action == 'reject' and swap.status == 'pending':
             swap.status = 'rejected'
             swap.save()
-            # Refund points and credit
-            swap.requester.profile.points += swap.points_spent
             swap.requester.profile.credit_balance += 1
-            swap.requester.profile.save(update_fields=['points', 'credit_balance'])
-            PointTransaction.objects.create(
+            swap.requester.profile.save(update_fields=['credit_balance'])
+            CreditTransaction.objects.create(
                 user=swap.requester,
-                amount=swap.points_spent,
+                amount=1,
                 description=f'Refund — swap rejected for "{swap.book_instance.book.title}"',
             )
             Notification.objects.create(
@@ -357,10 +344,10 @@ def swap_detail(request, pk):
                 swap_request=swap,
                 message=(
                     f'Your swap request for "{swap.book_instance.book.title}" was rejected. '
-                    f'Points and credit refunded.'
+                    f'1 credit refunded.'
                 ),
             )
-            messages.info(request, 'Swap rejected. Points and credit refunded to requester.')
+            messages.info(request, 'Swap rejected. 1 credit refunded to requester.')
 
     receipts = swap.receipts.all()
     user_has_receipt = receipts.filter(uploaded_by=request.user).exists()
@@ -390,18 +377,11 @@ def upload_receipt(request, swap_pk):
         return redirect('swap-detail', pk=swap.pk)
 
     if request.method == 'POST' and request.FILES.get('receipt_image'):
-        receipt = ShippingReceipt.objects.create(
+        ShippingReceipt.objects.create(
             swap_request=swap,
             uploaded_by=request.user,
             receipt_image=request.FILES['receipt_image'],
             approved=True,
-        )
-        request.user.profile.points += receipt.points_awarded
-        request.user.profile.save(update_fields=['points'])
-        PointTransaction.objects.create(
-            user=request.user,
-            amount=receipt.points_awarded,
-            description=f'Shipped "{swap.book_instance.book.title}" to {swap.requester.profile.display_name}',
         )
         swap.status = 'completed'
         swap.book_instance.status = 's'
@@ -410,12 +390,9 @@ def upload_receipt(request, swap_pk):
         Notification.objects.create(
             user=swap.requester,
             swap_request=swap,
-            message=(
-                f'"{swap.book_instance.book.title}" has been shipped to you! '
-                f'Check your tracking details.'
-            ),
+            message=f'"{swap.book_instance.book.title}" has been shipped to you!',
         )
-        messages.success(request, f'Receipt uploaded! You earned {receipt.points_awarded} points.')
+        messages.success(request, 'Receipt uploaded! Swap marked as complete.')
         return redirect('swap-detail', pk=swap.pk)
 
     return render(request, 'catalog/upload_receipt.html', {'swap': swap})
@@ -427,7 +404,7 @@ def my_swaps(request):
     received = SwapRequest.objects.filter(
         book_instance__user=request.user
     ).select_related('book_instance__book', 'requester')
-    transactions = PointTransaction.objects.filter(user=request.user)[:10]
+    transactions = CreditTransaction.objects.filter(user=request.user)[:10]
     return render(request, 'catalog/my_swaps.html', {
         'sent': sent,
         'received': received,
@@ -521,10 +498,10 @@ def download_label(request, swap_pk):
         profile = request.user.profile
         profile.credit_balance += swap.credits_earned
         profile.save(update_fields=['credit_balance'])
-        PointTransaction.objects.create(
+        CreditTransaction.objects.create(
             user=request.user,
             amount=swap.credits_earned,
-            description=f'Credits earned for shipping "{swap.book_instance.book.title}"',
+            description=f'Shipped "{swap.book_instance.book.title}" — label downloaded',
         )
 
     from django.http import HttpResponseRedirect

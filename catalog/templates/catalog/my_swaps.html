@@ -8,8 +8,8 @@
     <p style="font-size:13px; color:var(--text-muted); margin-top:4px">Manage your swap requests and track activity</p>
   </div>
   <div style="text-align:right">
-    <div style="font-size:24px; font-weight:300; color:var(--accent)">{{ request.user.profile.points }}</div>
-    <div style="font-size:12px; color:var(--text-muted)">points</div>
+    <div style="font-size:28px; font-weight:300; color:var(--accent)">{{ request.user.profile.credit_balance }}</div>
+    <div style="font-size:12px; color:var(--text-muted)">credits</div>
   </div>
 </div>
 
@@ -21,7 +21,7 @@
     <div class="copy-item">
       <div style="flex:1">
         <div style="font-size:15px; font-weight:500; color:var(--text); margin-bottom:4px">{{ swap.book_instance.book.title }}</div>
-        <div style="font-size:13px; color:var(--text-muted)">from {{ swap.requester.profile.anonymous_id }} · {{ swap.created_at|date:"M d, Y" }}</div>
+        <div style="font-size:13px; color:var(--text-muted)">from {{ swap.requester.profile.display_name }} · {{ swap.created_at|date:"M d, Y" }}</div>
       </div>
       <span class="status-badge {% if swap.status == 'completed' %}status-available{% elif swap.status == 'rejected' %}status-unavailable{% else %}status-maintenance{% endif %}">{{ swap.get_status_display }}</span>
     </div>
@@ -39,7 +39,7 @@
     <div class="copy-item">
       <div style="flex:1">
         <div style="font-size:15px; font-weight:500; color:var(--text); margin-bottom:4px">{{ swap.book_instance.book.title }}</div>
-        <div style="font-size:13px; color:var(--text-muted)">{{ swap.points_spent }} pts spent · {{ swap.created_at|date:"M d, Y" }}</div>
+        <div style="font-size:13px; color:var(--text-muted)">{{ swap.created_at|date:"M d, Y" }}</div>
       </div>
       <span class="status-badge {% if swap.status == 'completed' %}status-available{% elif swap.status == 'rejected' %}status-unavailable{% else %}status-maintenance{% endif %}">{{ swap.get_status_display }}</span>
     </div>
@@ -49,18 +49,18 @@
   {% endfor %}
 </div>
 
-<!-- Point history -->
+<!-- Credit history -->
 <div>
-  <h3 style="font-size:14px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:16px">Recent point activity</h3>
+  <h3 style="font-size:14px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:16px">Recent credit activity</h3>
   {% for tx in transactions %}
   <div class="copy-item">
     <div style="flex:1; font-size:14px; color:var(--text-secondary)">{{ tx.description }}</div>
     <span style="font-size:14px; font-weight:500; color:{% if tx.amount > 0 %}#6dc96d{% else %}#c96d6d{% endif %}">
-      {% if tx.amount > 0 %}+{% endif %}{{ tx.amount }} pts
+      {% if tx.amount > 0 %}+{% endif %}{{ tx.amount }} cr
     </span>
   </div>
   {% empty %}
-  <p style="color:var(--text-muted); font-size:14px">No point activity yet.</p>
+  <p style="color:var(--text-muted); font-size:14px">No credit activity yet.</p>
   {% endfor %}
 </div>
 {% endblock %}
