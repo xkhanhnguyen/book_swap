@@ -93,6 +93,9 @@ TEMPLATES = [
                 # for login
                 'social_django.context_processors.backends',
                 'social_django.context_processors.login_redirect',
+
+                # unread notification count
+                'catalog.context_processors.notification_count',
             ],
         },
     },
@@ -162,6 +165,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Redirect to home URL after login (Default redirects to /accounts/profile/)
 LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = '/admin/login/'
 
 
@@ -198,3 +202,12 @@ CKEDITOR_CONFIGS = {
 MESSAGE_TAGS = {
     messages.ERROR: 'danger',
 }
+
+# Encryption key for address at rest (base64-encoded 32 bytes for AES-256-GCM)
+ENCRYPTION_KEY = env('ENCRYPTION_KEY', default='')
+
+# Shippo API for shipping label generation
+SHIPPO_API_KEY = env('SHIPPO_API_KEY', default='')
+
+# Credits: 1 credit = CREDIT_RATE_USD worth of shipping
+CREDIT_RATE_USD = 3.0

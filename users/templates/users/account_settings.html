@@ -1,52 +1,78 @@
 {% extends "base_generic.html" %}
-
-{% block title %}{% endblock title %}
+{% block title %}Account Settings — BookSwap{% endblock %}
 
 {% block content %}
-    <div class="container d-flex flex-column align-items-center">
-        <div class="row my-3 p-3">
-            <img class="rounded-circle account-img" src="{{ user.profile.avatar.url }}" 
-                 style="cursor: pointer; width: 120px; height: 120px; object-fit: cover; border: 2px solid #333;"/>
-        </div>
+<div class="book-detail" style="max-width:540px">
+  <h1 style="font-size:22px; margin-bottom:8px">Account Settings</h1>
+  <p style="margin-bottom:32px; font-size:13px; color:var(--text-muted)">Your public ID: <strong style="color:var(--text)">{{ user.profile.anonymous_id }}</strong></p>
 
-        {% if user_form.errors %}
-            <div class="alert alert-danger alert-dismissible" role="alert">
-                <div id="form_errors">
-                    {% for key, value in user_form.errors.items %}
-                        <strong>{{ value }}</strong>
-                    {% endfor %}
-                </div>
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        {% endif %}
+  {% if user_form.errors or profile_form.errors %}
+  <div class="alert alert-danger" style="margin-bottom:24px">
+    {% for key, value in user_form.errors.items %}<div>{{ value }}</div>{% endfor %}
+    {% for key, value in profile_form.errors.items %}<div>{{ value }}</div>{% endfor %}
+  </div>
+  {% endif %}
 
-        <div class="form-content w-50">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label class="small mb-1">Username:</label>
-                    {{ user_form.username }}
-                </div>
-                <div class="form-group">
-                    <label class="small mb-1">Email:</label>
-                    {{ user_form.email }}
-                </div>
-                <div class="form-group">
-                    <a href="{% url 'password-change' %}">Change Password</a>
-                    <hr>
-                    <label class="small mb-1">Change Avatar:</label>
-                    {{ profile_form.avatar }}
-                </div>
-                <div class="form-group">
-                    <label class="small mb-1">Bio:</label> 
-                    {{ profile_form.bio }}
-                </div>
-                <br>
-                <button type="submit" class="btn btn-dark btn-lg">Save Changes</button>
-                <!-- <button type="reset" class="btn btn-dark btn-lg">Reset</button> -->
-            </form>
-        </div>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label>Username</label>
+      {{ user_form.username }}
     </div>
-{% endblock content %}
+    <div class="form-group">
+      <label>Email</label>
+      {{ user_form.email }}
+    </div>
+    <div class="form-group">
+      <label>Avatar</label>
+      {{ profile_form.avatar }}
+    </div>
+    <div class="form-group">
+      <label>Bio</label>
+      {{ profile_form.bio }}
+    </div>
+
+    <div class="form-group">
+      <label style="margin-bottom:8px; display:block">Display Name</label>
+      <div style="display:flex; flex-direction:column; gap:8px; font-size:14px; color:var(--text-secondary)">
+        {% for radio in profile_form.display_preference %}
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:normal">
+          {{ radio.tag }} {{ radio.choice_label }}
+        </label>
+        {% endfor %}
+      </div>
+      <div style="font-size:12px; color:var(--text-muted); margin-top:6px">
+        Your current public name: <strong style="color:var(--accent)">{{ user.profile.display_name }}</strong>
+      </div>
+    </div>
+
+    <hr style="border-color:var(--border); margin:28px 0">
+
+    <h3 style="font-size:15px; margin-bottom:4px">Location</h3>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px">Used to show distance to books. Your address is <strong style="color:var(--text)">never shown</strong> to other users — only the distance in km is visible.</p>
+
+    <div class="form-group">
+      <label>
+        Private Address
+        <span style="font-size:11px; color:var(--accent); background:rgba(200,169,110,0.1); border:1px solid rgba(200,169,110,0.2); border-radius:4px; padding:1px 6px; margin-left:6px">Private</span>
+      </label>
+      {{ profile_form.address }}
+      <div style="font-size:12px; color:var(--text-muted); margin-top:5px">{{ profile_form.address.help_text }}</div>
+    </div>
+    <div class="form-group">
+      <label>
+        City (public)
+        <span style="font-size:11px; color:var(--text-muted); background:var(--surface2); border:1px solid var(--border); border-radius:4px; padding:1px 6px; margin-left:6px">Shown publicly</span>
+      </label>
+      {{ profile_form.city }}
+      <div style="font-size:12px; color:var(--text-muted); margin-top:5px">{{ profile_form.city.help_text }}</div>
+    </div>
+
+    <div style="margin-top:28px; display:flex; gap:10px; align-items:center">
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+      <a href="{% url 'password-change' %}" class="btn btn-secondary btn-sm">Change Password</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

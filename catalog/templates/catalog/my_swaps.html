@@ -21,7 +21,7 @@
     <div class="copy-item">
       <div style="flex:1">
         <div style="font-size:15px; font-weight:500; color:var(--text); margin-bottom:4px">{{ swap.book_instance.book.title }}</div>
-        <div style="font-size:13px; color:var(--text-muted)">from {{ swap.requester.get_full_name|default:swap.requester.username }} · {{ swap.created_at|date:"M d, Y" }}</div>
+        <div style="font-size:13px; color:var(--text-muted)">from {{ swap.requester.profile.anonymous_id }} · {{ swap.created_at|date:"M d, Y" }}</div>
       </div>
       <span class="status-badge {% if swap.status == 'completed' %}status-available{% elif swap.status == 'rejected' %}status-unavailable{% else %}status-maintenance{% endif %}">{{ swap.get_status_display }}</span>
     </div>

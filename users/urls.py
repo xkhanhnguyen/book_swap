@@ -13,7 +13,7 @@ urlpatterns = [
                                         authentication_form=forms.LoginForm), name='login'),
      re_path(r'^oauth/', include('social_django.urls', namespace='social')),
                                    
-     path('logout/', auth_views.LogoutView.as_view(template_name='users/logout.html'), name='logout'),
+     path('logout/', views.logout_view, name='logout'),
      path('password-reset/', views.ResetPasswordView.as_view(), name='password-reset'),
 
      path('password-change/', views.custom_password_change, name='password-change'),  

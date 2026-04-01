@@ -1,48 +1,43 @@
 from django.shortcuts import render, redirect
-
-from .models import Book, Author, BookInstance, Genre, SwapRequest, ShippingReceipt, PointTransaction
 from django.views import generic
-from itertools import chain
 from django.shortcuts import get_object_or_404
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.db.models import Q
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.db.models import Q, Value
+from django.db.models.functions import Concat
 import datetime
+import math
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.http import HttpResponseRedirect
-from django.urls import reverse
-
-from catalog.forms import RenewBookForm, AddCopyForm
-
+from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from django.urls import reverse_lazy
-from catalog.models import Author
-from catalog.models import Book
-
-from django.db.models import Value
-from django.db.models.functions import Concat
-
-from django.utils.text import slugify
+from django.utils import timezone
 from django.contrib import messages
 from extra_views import CreateWithInlinesView, InlineFormSetFactory
 
+from .models import Book, Author, BookInstance, Genre, SwapRequest, ShippingReceipt, PointTransaction, Notification
+from catalog.forms import RenewBookForm, AddCopyForm
+
+
+# ─── Utilities ───────────────────────────────────────────────────────────────
+
+def haversine_km(lat1, lon1, lat2, lon2):
+    R = 6371
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (math.sin(dlat/2)**2
+         + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2)
+    return R * 2 * math.asin(math.sqrt(a))
+
+
+# ─── General views ────────────────────────────────────────────────────────────
 
 def index(request):
-    """View function for home page of site."""
-
-    # Generate counts of some of the main objects
     num_books = Book.objects.all().count()
     num_instances = BookInstance.objects.all().count()
     num_genre = Genre.objects.all().count()
-
-    # Available books (status = 'a')
     num_instances_available = BookInstance.objects.filter(status__exact='a').count()
-
-    # The 'all()' is implied by default.
     num_authors = Author.objects.count()
-
-    # Number of visits to this view, as counted in the session variable.
     num_visits = request.session.get('num_visits', 0)
     request.session['num_visits'] = num_visits + 1
 
@@ -54,12 +49,12 @@ def index(request):
         'num_genre': num_genre,
         'num_visits': num_visits,
     }
-
-    # Render the HTML template index.html with the data in the context variable
     return render(request, 'index.html', context=context)
 
+
+# ─── Book views ───────────────────────────────────────────────────────────────
+
 class BookListView(generic.ListView):
-    """Generic class-based view for a list of books."""
     model = Book
     paginate_by = 20
     context_object_name = 'book_list'
@@ -69,15 +64,12 @@ class BookListView(generic.ListView):
         qs = Book.objects.annotate(
             available_copies=Count('bookinstance', filter=Q(bookinstance__status='a'))
         ).order_by('popularity_rank', 'title')
-
         if self.request.GET.get('available'):
             qs = qs.filter(available_copies__gt=0)
-
         return qs
-    
+
 
 class BookDetailView(generic.DetailView):
-    """Generic class-based detail view for a book."""
     model = Book
 
     def get_context_data(self, **kwargs):
@@ -111,10 +103,9 @@ class BookDetailView(generic.DetailView):
         offers.sort(key=lambda x: (x['distance_km'] is None, x['distance_km'] or 0))
         context['swap_offers'] = offers
         return context
-    
+
 
 class AuthorListView(generic.ListView):
-    """Generic class-based list view for a list of authors."""
     model = Author
     paginate_by = 20
 
@@ -128,24 +119,21 @@ class AuthorListView(generic.ListView):
             .distinct()
         )
 
+
 class AuthorDetailView(generic.DetailView):
-    """Generic class-based detail view for an author."""
     model = Author
 
+
 class GenreListView(generic.ListView):
-    """Generic class-based list view for a list of genres."""
     model = Genre
-    paginate_by = 10 # reducing the number of items displayed on each page
+    paginate_by = 10
+
 
 class GenreDetailView(generic.DetailView):
-    """Generic class-based detail view for an genre."""
     model = Genre
-
-
 
 
 class BooksByUserListView(LoginRequiredMixin, generic.ListView):
-    """List all copies the logged-in user has listed for swap."""
     model = BookInstance
     template_name = 'catalog/bookinstance_list_by_user.html'
     paginate_by = 20
@@ -157,80 +145,51 @@ class BooksByUserListView(LoginRequiredMixin, generic.ListView):
             .order_by('-date_posted')
         )
 
+
 class BooksByAllListView(LoginRequiredMixin, generic.ListView):
-    """Generic class-based view listing books on swapped, only visible to staff --user who can mark as swapped."""
     model = BookInstance
     template_name = 'catalog/bookinstance_list_by_user.html'
     paginate_by = 10
 
     def get_queryset(self):
-        return (
-            BookInstance.objects.order_by('date_posted')
-        )
-    
+        return BookInstance.objects.order_by('date_posted')
+
+
 @login_required
 @permission_required('catalog.can_mark_swapped', raise_exception=True)
 def renew_book_librarian(request, pk):
-    """View function for renewing a specific BookInstance by librarian."""
-
-    """
-    Get_object_or_404:
-    - Returns a specified object from a model based on its primary key value, and raises an Http404 exception (not found) if the record does not exist.
-    - Use the pk argument in get_object_or_404() to get the current BookInstance 
-        (if this does not exist, the view will immediately exit and the page will display a "not found" error)
-    """
     book_instance = get_object_or_404(BookInstance, pk=pk)
-
-    # If this is a POST request then process the Form data
     if request.method == 'POST':
-
-        # Create a form instance and populate it with data from the request (binding):
         form = RenewBookForm(request.POST)
-
-        # Check if the form is valid:
         if form.is_valid():
-            # process the data in form.cleaned_data as required (here we just write it to the model due_back field)
             book_instance.due_back = form.cleaned_data['renewal_date']
             book_instance.save()
-
-            """
-            Redirect to a new URL:
-            -  HttpResponseRedirect: This creates a redirect to a specified URL (HTTP status code 302).
-            -  reverse(): This generates a URL from a URL configuration name and a set of arguments. 
-                It is the Python equivalent of the url tag that we've been using in our templates.
-            """
             return HttpResponseRedirect(reverse('all-books'))
-
-    # If this is a GET (or any other method) create the default form.
     else:
         proposed_renewal_date = datetime.date.today() + datetime.timedelta(weeks=3)
         form = RenewBookForm(initial={'renewal_date': proposed_renewal_date})
-
-    context = {
-        'form': form,
-        'book_instance': book_instance,
-    }
-
-    # render() to create the HTML page, specifying the template and a context that contains our form
-    return render(request, 'catalog/book_renew_librarian.html', context)
+    return render(request, 'catalog/book_renew_librarian.html', {'form': form, 'book_instance': book_instance})
 
 
-#  Create, update and delete authors
+# ─── Author CRUD ──────────────────────────────────────────────────────────────
+
 class AuthorCreate(InlineFormSetFactory):
     model = Author
     fields = ['first_name', 'last_name', 'date_of_birth']
 
+
 class AuthorUpdate(UpdateView):
     model = Author
-    fields = '__all__' # Not recommended (potential security issue if more fields added)
+    fields = '__all__'
+
 
 class AuthorDelete(DeleteView):
     model = Author
     success_url = reverse_lazy('authors')
 
 
+# ─── Book CRUD ────────────────────────────────────────────────────────────────
 
-#  Create, update and delete books
 class BookCreateView(LoginRequiredMixin, CreateWithInlinesView):
     model = Book
     inclines = [Author]
@@ -238,52 +197,42 @@ class BookCreateView(LoginRequiredMixin, CreateWithInlinesView):
     template_name = 'catalog/book_form.html'
 
     def get_success_url(self):
-        messages.success(
-            self.request, 'Your book-swap has been created successfully.')
+        messages.success(self.request, 'Your book-swap has been created successfully.')
         return self.object.get_absolute_url()
+
 
 class BookUpdateView(LoginRequiredMixin, UpdateView):
     model = Book
-    fields = ['title', 'author', 'summary',  'genre']
+    fields = ['title', 'author', 'summary', 'genre']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        update = True
-        context['update'] = update
-
+        context['update'] = True
         return context
 
     def get_success_url(self):
-        messages.success(
-            self.request, 'Your book has been updated successfully.')
+        messages.success(self.request, 'Your book has been updated successfully.')
         return reverse_lazy('book')
 
     def get_queryset(self):
         return self.model.objects.filter(author=self.request.user)
+
 
 class BookDeleteView(LoginRequiredMixin, DeleteView):
     model = Book
+
     def get_success_url(self):
-        messages.success(
-            self.request, 'Your post has been deleted successfully.')
+        messages.success(self.request, 'Your post has been deleted successfully.')
         return reverse_lazy('book')
 
     def get_queryset(self):
         return self.model.objects.filter(author=self.request.user)
 
-import math
 
-def haversine_km(lat1, lon1, lat2, lon2):
-    R = 6371
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
-    return R * 2 * math.asin(math.sqrt(a))
-
+# ─── Copy management ─────────────────────────────────────────────────────────
 
 @login_required
 def add_copy(request, book_pk):
-    """Let a user add themselves as an owner of an existing book."""
     book = get_object_or_404(Book, pk=book_pk)
 
     if BookInstance.objects.filter(book=book, user=request.user, status='a').exists():
@@ -306,9 +255,10 @@ def add_copy(request, book_pk):
     return render(request, 'catalog/add_copy.html', {'book': book, 'form': form})
 
 
+# ─── Swap flow ───────────────────────────────────────────────────────────────
+
 @login_required
 def request_swap(request, pk):
-    """Request to swap a specific BookInstance."""
     book_instance = get_object_or_404(BookInstance, pk=pk, status='a')
 
     if book_instance.user == request.user:
@@ -316,6 +266,12 @@ def request_swap(request, pk):
         return redirect('book-detail', pk=book_instance.book.pk)
 
     profile = request.user.profile
+
+    # Check credits (must have ≥1 credit)
+    if profile.credit_balance < 1:
+        messages.error(request, "You need at least 1 credit to request a swap. Earn credits by shipping books.")
+        return redirect('book-detail', pk=book_instance.book.pk)
+
     if profile.points < 10:
         messages.error(request, "You need at least 10 points to request a swap.")
         return redirect('book-detail', pk=book_instance.book.pk)
@@ -332,13 +288,29 @@ def request_swap(request, pk):
             message=message,
             points_spent=10,
         )
+        # Deduct 10 points
         profile.points -= 10
-        profile.save(update_fields=['points'])
+        # Deduct 1 credit
+        profile.credit_balance -= 1
+        profile.save(update_fields=['points', 'credit_balance'])
+
         PointTransaction.objects.create(
             user=request.user,
             amount=-10,
             description=f'Swap request for "{book_instance.book.title}"',
         )
+
+        # Notify the book owner
+        owner = book_instance.user
+        Notification.objects.create(
+            user=owner,
+            swap_request=swap,
+            message=(
+                f'{request.user.profile.display_name} requested your copy of '
+                f'"{book_instance.book.title}".'
+            ),
+        )
+
         messages.success(request, 'Swap request sent! The owner will be notified.')
         return redirect('swap-detail', pk=swap.pk)
 
@@ -359,34 +331,55 @@ def swap_detail(request, pk):
         if action == 'accept' and swap.status == 'pending':
             swap.status = 'accepted'
             swap.save()
+            Notification.objects.create(
+                user=swap.requester,
+                swap_request=swap,
+                message=(
+                    f'Your swap request for "{swap.book_instance.book.title}" was accepted! '
+                    f'Please ship your book.'
+                ),
+            )
             messages.success(request, 'Swap accepted! Both parties should ship their books.')
         elif action == 'reject' and swap.status == 'pending':
             swap.status = 'rejected'
             swap.save()
-            # Refund points
+            # Refund points and credit
             swap.requester.profile.points += swap.points_spent
-            swap.requester.profile.save(update_fields=['points'])
+            swap.requester.profile.credit_balance += 1
+            swap.requester.profile.save(update_fields=['points', 'credit_balance'])
             PointTransaction.objects.create(
                 user=swap.requester,
                 amount=swap.points_spent,
                 description=f'Refund — swap rejected for "{swap.book_instance.book.title}"',
             )
-            messages.info(request, 'Swap rejected. Points refunded to requester.')
+            Notification.objects.create(
+                user=swap.requester,
+                swap_request=swap,
+                message=(
+                    f'Your swap request for "{swap.book_instance.book.title}" was rejected. '
+                    f'Points and credit refunded.'
+                ),
+            )
+            messages.info(request, 'Swap rejected. Points and credit refunded to requester.')
 
     receipts = swap.receipts.all()
     user_has_receipt = receipts.filter(uploaded_by=request.user).exists()
+    label_expired = False
+    if swap.label_expires_at:
+        label_expired = timezone.now() > swap.label_expires_at
+
     return render(request, 'catalog/swap_detail.html', {
         'swap': swap,
         'is_owner': is_owner,
         'is_requester': is_requester,
         'receipts': receipts,
         'user_has_receipt': user_has_receipt,
+        'label_expired': label_expired,
     })
 
 
 @login_required
 def upload_receipt(request, swap_pk):
-    """Only the book owner uploads the shipping receipt to earn points."""
     swap = get_object_or_404(SwapRequest, pk=swap_pk, status='accepted')
     if swap.book_instance.user != request.user:
         messages.error(request, "Only the book owner uploads the shipping receipt.")
@@ -403,19 +396,25 @@ def upload_receipt(request, swap_pk):
             receipt_image=request.FILES['receipt_image'],
             approved=True,
         )
-        # Owner earns points for shipping
         request.user.profile.points += receipt.points_awarded
         request.user.profile.save(update_fields=['points'])
         PointTransaction.objects.create(
             user=request.user,
             amount=receipt.points_awarded,
-            description=f'Shipped "{swap.book_instance.book.title}" to {swap.requester.username}',
+            description=f'Shipped "{swap.book_instance.book.title}" to {swap.requester.profile.display_name}',
         )
-        # Mark swap + copy as completed
         swap.status = 'completed'
         swap.book_instance.status = 's'
         swap.book_instance.save()
         swap.save()
+        Notification.objects.create(
+            user=swap.requester,
+            swap_request=swap,
+            message=(
+                f'"{swap.book_instance.book.title}" has been shipped to you! '
+                f'Check your tracking details.'
+            ),
+        )
         messages.success(request, f'Receipt uploaded! You earned {receipt.points_awarded} points.')
         return redirect('swap-detail', pk=swap.pk)
 
@@ -425,7 +424,9 @@ def upload_receipt(request, swap_pk):
 @login_required
 def my_swaps(request):
     sent = SwapRequest.objects.filter(requester=request.user).select_related('book_instance__book')
-    received = SwapRequest.objects.filter(book_instance__user=request.user).select_related('book_instance__book', 'requester')
+    received = SwapRequest.objects.filter(
+        book_instance__user=request.user
+    ).select_related('book_instance__book', 'requester')
     transactions = PointTransaction.objects.filter(user=request.user)[:10]
     return render(request, 'catalog/my_swaps.html', {
         'sent': sent,
@@ -433,6 +434,114 @@ def my_swaps(request):
         'transactions': transactions,
     })
 
+
+# ─── Shipping label (Shippo) ─────────────────────────────────────────────────
+
+@login_required
+def generate_label(request, swap_pk):
+    """Generate a Shippo shipping label for an accepted swap. Owner only."""
+    swap = get_object_or_404(SwapRequest, pk=swap_pk, status='accepted')
+    if swap.book_instance.user != request.user:
+        messages.error(request, "Only the book owner can generate a label.")
+        return redirect('swap-detail', pk=swap_pk)
+
+    if swap.label_url:
+        messages.info(request, "A label has already been generated for this swap.")
+        return redirect('swap-detail', pk=swap_pk)
+
+    try:
+        from catalog.utils.encryption import decrypt_address
+        from catalog.utils.shippo_client import generate_shipping_label
+        from django.conf import settings
+
+        owner = swap.book_instance.user
+        requester = swap.requester
+
+        owner_address = decrypt_address(owner.profile.address_encrypted)
+        requester_address = decrypt_address(requester.profile.address_encrypted)
+
+        if not owner_address:
+            messages.error(request, "Your address is not set. Please update it in Account Settings.")
+            return redirect('swap-detail', pk=swap_pk)
+        if not requester_address:
+            messages.error(request, "The requester hasn't set their address yet.")
+            return redirect('swap-detail', pk=swap_pk)
+
+        result = generate_shipping_label(
+            from_name=owner.profile.display_name,
+            from_street=owner_address,
+            from_city=owner.profile.city or '',
+            from_zip='00000',
+            from_country='VN',
+            to_name=requester.profile.display_name,
+            to_street=requester_address,
+            to_city=requester.profile.city or '',
+            to_zip='00000',
+            to_country='VN',
+        )
+
+        credit_rate = getattr(settings, 'CREDIT_RATE_USD', 3.0)
+        credits = max(1, round(result['shipping_cost_usd'] / credit_rate))
+
+        swap.label_url = result['label_url']
+        swap.label_expires_at = timezone.now() + timezone.timedelta(hours=24)
+        swap.shipping_cost_usd = result['shipping_cost_usd']
+        swap.credits_earned = credits
+        swap.save(update_fields=['label_url', 'label_expires_at', 'shipping_cost_usd', 'credits_earned'])
+
+        messages.success(request, f'Label generated! Download it within 24 hours. '
+                                   f'You will earn {credits} credit(s) when confirmed shipped.')
+
+    except Exception as e:
+        messages.error(request, f'Could not generate label: {e}')
+
+    return redirect('swap-detail', pk=swap_pk)
+
+
+@login_required
+def download_label(request, swap_pk):
+    """Mark label as downloaded and award credits to the owner."""
+    swap = get_object_or_404(SwapRequest, pk=swap_pk)
+    if swap.book_instance.user != request.user:
+        messages.error(request, "Only the book owner can download this label.")
+        return redirect('swap-detail', pk=swap_pk)
+
+    if not swap.label_url:
+        messages.error(request, "No label has been generated for this swap.")
+        return redirect('swap-detail', pk=swap_pk)
+
+    if swap.label_expires_at and timezone.now() > swap.label_expires_at:
+        messages.error(request, "This label has expired. Please generate a new one.")
+        return redirect('swap-detail', pk=swap_pk)
+
+    if not swap.label_downloaded:
+        swap.label_downloaded = True
+        swap.save(update_fields=['label_downloaded'])
+        # Award credits to the owner
+        profile = request.user.profile
+        profile.credit_balance += swap.credits_earned
+        profile.save(update_fields=['credit_balance'])
+        PointTransaction.objects.create(
+            user=request.user,
+            amount=swap.credits_earned,
+            description=f'Credits earned for shipping "{swap.book_instance.book.title}"',
+        )
+
+    from django.http import HttpResponseRedirect
+    return HttpResponseRedirect(swap.label_url)
+
+
+# ─── Notifications ────────────────────────────────────────────────────────────
+
+@login_required
+def notifications(request):
+    notifs = request.user.notifications.all()
+    # Mark all as read
+    notifs.filter(read=False).update(read=True)
+    return render(request, 'catalog/notifications.html', {'notifications': notifs})
+
+
+# ─── Search ──────────────────────────────────────────────────────────────────
 
 def search(request):
     q = request.GET.get("search_query", "").strip()
@@ -446,4 +555,3 @@ def search(request):
     ).filter(full_name__icontains=q)
 
     return render(request, "catalog/search_results.html", {'books': books, 'authors': authors, 'q': q})
-

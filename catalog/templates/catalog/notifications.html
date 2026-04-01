@@ -1,0 +1,22 @@
+{% extends "base_generic.html" %}
+{% block title %}Notifications — BookSwap{% endblock %}
+
+{% block content %}
+<div class="book-detail" style="max-width:600px">
+  <h1 style="font-size:22px; margin-bottom:24px">Notifications</h1>
+
+  {% for notif in notifications %}
+  <a href="{% if notif.swap_request %}{% url 'swap-detail' notif.swap_request.pk %}{% else %}#{% endif %}"
+     style="text-decoration:none; display:block; margin-bottom:8px">
+    <div class="copy-item" style="{% if not notif.read %}border-left:3px solid var(--accent);{% endif %}">
+      <div style="flex:1">
+        <div style="font-size:14px; color:var(--text)">{{ notif.message }}</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:4px">{{ notif.created_at|date:"M d, Y H:i" }}</div>
+      </div>
+    </div>
+  </a>
+  {% empty %}
+  <p style="color:var(--text-muted); font-size:14px">No notifications yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

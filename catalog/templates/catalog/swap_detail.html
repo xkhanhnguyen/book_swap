@@ -19,14 +19,14 @@
     <div class="card">
       <div class="card-body">
         <div style="font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:8px">Requester</div>
-        <div style="font-size:15px; font-weight:500">{{ swap.requester.get_full_name|default:swap.requester.username }}</div>
+        <div style="font-size:15px; font-weight:500">{{ swap.requester.profile.anonymous_id }}</div>
         {% if swap.requester.profile.city %}<div style="font-size:13px; color:var(--text-muted)">{{ swap.requester.profile.city }}</div>{% endif %}
       </div>
     </div>
     <div class="card">
       <div class="card-body">
         <div style="font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:8px">Owner</div>
-        <div style="font-size:15px; font-weight:500">{{ swap.book_instance.user.get_full_name|default:swap.book_instance.user.username }}</div>
+        <div style="font-size:15px; font-weight:500">{{ swap.book_instance.user.profile.anonymous_id }}</div>
         {% if swap.book_instance.user.profile.city %}<div style="font-size:13px; color:var(--text-muted)">{{ swap.book_instance.user.profile.city }}</div>{% endif %}
       </div>
     </div>
@@ -52,16 +52,44 @@
   </div>
   {% endif %}
 
+  <!-- Shipping label (Shippo) -->
+  {% if swap.status == 'accepted' and is_owner %}
+  <div class="copies-section" style="margin-bottom:32px">
+    <h3>Shipping Label</h3>
+    {% if swap.label_url %}
+      {% if label_expired %}
+      <p style="font-size:13px; color:#c96d6d; margin-bottom:12px">This label has expired (24-hour limit). Generate a new one.</p>
+      <form method="post" action="{% url 'generate-label' swap.pk %}">{% csrf_token %}
+        <button type="submit" class="btn btn-secondary btn-sm">Regenerate Label</button>
+      </form>
+      {% else %}
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px">
+        Label ready — expires {{ swap.label_expires_at|date:"M d, Y H:i" }} UTC.
+        {% if swap.credits_earned %} You will earn <strong style="color:var(--accent)">{{ swap.credits_earned }} credit(s)</strong> on download.{% endif %}
+      </p>
+      <a href="{% url 'download-label' swap.pk %}" class="btn btn-primary btn-sm">
+        {% if swap.label_downloaded %}Re-download Label{% else %}Download Label (+{{ swap.credits_earned }} cr){% endif %}
+      </a>
+      {% endif %}
+    {% else %}
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px">Generate a prepaid shipping label via Shippo. Both addresses must be set in Account Settings.</p>
+    <form method="post" action="{% url 'generate-label' swap.pk %}">{% csrf_token %}
+      <button type="submit" class="btn btn-primary btn-sm">Generate Shipping Label</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <!-- Shipping receipts -->
   {% if swap.status == 'accepted' or swap.status == 'completed' %}
   <div class="copies-section">
     <h3>Shipping Receipts</h3>
-    <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px">Both parties must ship their books and upload proof to earn 10 points each.</p>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px">Upload proof of shipping to earn 10 points.</p>
 
     {% for receipt in receipts %}
     <div class="copy-item">
       <div style="flex:1">
-        <div style="font-size:14px; font-weight:500; margin-bottom:2px">{{ receipt.uploaded_by.get_full_name|default:receipt.uploaded_by.username }}</div>
+        <div style="font-size:14px; font-weight:500; margin-bottom:2px">{{ receipt.uploaded_by.profile.display_name }}</div>
         <div style="font-size:13px; color:var(--text-muted)">Uploaded {{ receipt.created_at|date:"M d, Y" }}</div>
       </div>
       <span class="status-badge status-available">+{{ receipt.points_awarded }} pts</span>

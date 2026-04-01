@@ -43,7 +43,12 @@ urlpatterns = [
     path('swap/<int:swap_pk>/receipt/', views.upload_receipt, name='upload-receipt'),
     path('swaps/', views.my_swaps, name='my-swaps'),
 
-    
+    # shipping labels
+    path('swap/<int:swap_pk>/label/generate/', views.generate_label, name='generate-label'),
+    path('swap/<int:swap_pk>/label/download/', views.download_label, name='download-label'),
+
+    # notifications
+    path('notifications/', views.notifications, name='notifications'),
 ]
 
 

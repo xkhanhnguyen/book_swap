@@ -42,7 +42,7 @@
       <div class="copy-item">
         <div style="flex:1">
           <div style="font-size:14px; color:var(--text); margin-bottom:4px; display:flex; align-items:center; gap:10px">
-            <strong>{{ copy.user.get_full_name|default:copy.user.username }}</strong>
+            <strong>{{ copy.user.profile.anonymous_id }}</strong>
             {% if dist is not None %}
             <span style="font-size:12px; color:var(--accent); background:rgba(200,169,110,0.1); border:1px solid rgba(200,169,110,0.2); border-radius:20px; padding:2px 8px">
               {{ dist|floatformat:0 }} km away

@@ -10,6 +10,7 @@ from django.urls import reverse_lazy
 from django.contrib.auth.views import PasswordResetView
 from django.contrib.messages.views import SuccessMessageMixin
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout as auth_logout
 
 from .models import Profile
 
@@ -116,3 +117,7 @@ def custom_password_change(request):
 
 def password_change_done(request):
     return render(request, 'users/password_change_done.html')
+
+def logout_view(request):
+    auth_logout(request)
+    return redirect('/')

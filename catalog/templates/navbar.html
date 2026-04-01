@@ -16,8 +16,14 @@
 
       {% if user.is_authenticated %}
       <a href="{% url 'my-swaps' %}" style="font-size:13px; color:var(--accent); padding:6px 10px; border:1px solid rgba(200,169,110,0.3); border-radius:var(--radius)">
-        {{ user.profile.points }} pts
+        {{ user.profile.points }} pts &nbsp;·&nbsp; {{ user.profile.credit_balance }} cr
       </a>
+      {% if unread_notifications_count %}
+      <a href="{% url 'notifications' %}" style="position:relative; font-size:13px; padding:6px 10px; color:var(--text-secondary)">
+        <i class="fa fa-bell"></i>
+        <span style="position:absolute; top:2px; right:2px; background:#e05c5c; color:#fff; border-radius:50%; width:16px; height:16px; font-size:10px; display:flex; align-items:center; justify-content:center; line-height:1">{{ unread_notifications_count }}</span>
+      </a>
+      {% endif %}
       <div class="dropdown">
         <button class="dropdown-toggle" onclick="var d=this.closest('.dropdown');d.classList.toggle('open');event.stopPropagation()">{{ user.get_username }} <i class="fa fa-chevron-down" style="font-size:10px"></i></button>
         <div class="dropdown-menu">
@@ -25,7 +31,10 @@
           <a href="{% url 'my-swapped-book' %}">My Books</a>
           <a href="{% url 'account-settings' %}">Settings</a>
           <div class="dropdown-divider"></div>
-          <a href="{% url 'logout' %}">Sign out</a>
+          <form method="post" action="{% url 'logout' %}" style="margin:0">
+            {% csrf_token %}
+            <button type="submit" style="background:none;border:none;width:100%;text-align:left;padding:10px 16px;font-size:14px;color:var(--text-secondary);cursor:pointer;font-family:inherit">Sign out</button>
+          </form>
         </div>
       </div>
       {% else %}

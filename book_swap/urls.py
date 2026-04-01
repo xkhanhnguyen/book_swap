@@ -40,7 +40,6 @@ urlpatterns = [
     path('store/', include('store.urls')),
     path('', RedirectView.as_view(url='/store/', permanent=True)),
 
-    path('accounts/', include('django.contrib.auth.urls'))
 ] 
 
 

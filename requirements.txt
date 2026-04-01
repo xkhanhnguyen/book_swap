@@ -4,4 +4,7 @@ social-auth-app-django
 django-ckeditor
 django-extra-views
 Pillow
+geopy
+cryptography
+shippo
 # book_manager

@@ -83,15 +83,25 @@ class UpdateProfileForm(forms.ModelForm):
     """to let users update their profile"""
     avatar = forms.ImageField(widget=forms.FileInput(attrs={'class': 'form-control-file'}), required=False)
     bio = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}), required=False)
+    address = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 123 Nguyen Hue, District 1, Ho Chi Minh City'}),
+        help_text='Private — used only to calculate distance. Never shown to other users.'
+    )
     city = forms.CharField(
         max_length=200, required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Ho Chi Minh City, Vietnam'}),
-        help_text='Used to show distance to other users'
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Ho Chi Minh City'}),
+        help_text='Shown publicly as your general location (e.g. city name only)'
+    )
+    display_preference = forms.ChoiceField(
+        choices=[('bookswap_id', 'BookSwap ID (anonymous)'), ('real_name', 'Real Name')],
+        widget=forms.RadioSelect(),
+        required=True,
     )
 
     class Meta:
         model = Profile
-        fields = ['avatar', 'bio', 'city']
+        fields = ['avatar', 'bio', 'address', 'city', 'display_preference']
 
 # Password Change Form
 class CustomPasswordChangeForm(PasswordChangeForm):
