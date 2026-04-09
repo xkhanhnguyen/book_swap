@@ -9,4 +9,4 @@ cryptography
 shippo
 sendgrid
 pgeocode
-# book_manager
+requests
