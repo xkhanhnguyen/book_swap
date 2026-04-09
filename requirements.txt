@@ -7,4 +7,6 @@ Pillow
 geopy
 cryptography
 shippo
+sendgrid
+pgeocode
 # book_manager

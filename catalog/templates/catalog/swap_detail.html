@@ -21,13 +21,30 @@
         <div style="font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:8px">Requester</div>
         <div style="font-size:15px; font-weight:500">{{ swap.requester.profile.anonymous_id }}</div>
         {% if swap.requester.profile.city %}<div style="font-size:13px; color:var(--text-muted)">{{ swap.requester.profile.city }}</div>{% endif %}
+        {% if swap.requester.profile.avg_rating %}
+        <div style="font-size:13px; color:var(--accent); margin-top:4px">
+          {{ swap.requester.profile.stars_display }} {{ swap.requester.profile.avg_rating }}
+          <span style="color:var(--text-muted)">({{ swap.requester.profile.total_ratings }})</span>
+        </div>
+        {% endif %}
       </div>
     </div>
     <div class="card">
       <div class="card-body">
         <div style="font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:8px">Owner</div>
-        <div style="font-size:15px; font-weight:500">{{ swap.book_instance.user.profile.anonymous_id }}</div>
+        <div style="font-size:15px; font-weight:500">
+          {{ swap.book_instance.user.profile.anonymous_id }}
+          {% if swap.book_instance.user.profile.is_verified_shipper %}
+          <span style="font-size:11px; background:rgba(200,169,110,0.15); border:1px solid rgba(200,169,110,0.3); border-radius:4px; color:var(--accent); padding:1px 6px; margin-left:6px">&#10003; Verified</span>
+          {% endif %}
+        </div>
         {% if swap.book_instance.user.profile.city %}<div style="font-size:13px; color:var(--text-muted)">{{ swap.book_instance.user.profile.city }}</div>{% endif %}
+        {% if swap.book_instance.user.profile.avg_rating %}
+        <div style="font-size:13px; color:var(--accent); margin-top:4px">
+          {{ swap.book_instance.user.profile.stars_display }} {{ swap.book_instance.user.profile.avg_rating }}
+          <span style="color:var(--text-muted)">({{ swap.book_instance.user.profile.total_ratings }})</span>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -82,9 +99,9 @@
 
   <!-- Shipping receipts -->
   {% if swap.status == 'accepted' or swap.status == 'completed' %}
-  <div class="copies-section">
+  <div class="copies-section" style="margin-bottom:32px">
     <h3>Shipping Receipts</h3>
-    <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px">Upload proof of shipping to earn 10 points.</p>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px">Upload proof of shipping to complete the swap.</p>
 
     {% for receipt in receipts %}
     <div class="copy-item">
@@ -92,18 +109,65 @@
         <div style="font-size:14px; font-weight:500; margin-bottom:2px">{{ receipt.uploaded_by.profile.display_name }}</div>
         <div style="font-size:13px; color:var(--text-muted)">Uploaded {{ receipt.created_at|date:"M d, Y" }}</div>
       </div>
-      <span class="status-badge status-available">+{{ receipt.points_awarded }} pts</span>
+      <span class="status-badge status-available">Submitted</span>
     </div>
     {% empty %}
     <p style="color:var(--text-muted); font-size:14px; padding:16px 0">No receipts uploaded yet.</p>
     {% endfor %}
 
-    {% if is_owner and not user_has_receipt %}
+    {% if is_owner and not user_has_receipt and swap.status == 'accepted' %}
     <div style="margin-top:24px">
-      <a href="{% url 'upload-receipt' swap.pk %}" class="btn btn-primary">Upload Shipping Receipt (+10 pts)</a>
+      <a href="{% url 'upload-receipt' swap.pk %}" class="btn btn-primary">Upload Shipping Receipt</a>
     </div>
     {% elif is_requester and not receipts %}
     <div style="margin-top:16px; font-size:13px; color:var(--text-muted)">Waiting for the owner to ship and upload their receipt.</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Feature 4: Rating section -->
+  {% if swap.status == 'completed' %}
+  <div class="copies-section" style="margin-bottom:32px">
+    <h3>Rating</h3>
+    {% if user_rating %}
+    <div style="font-size:14px; color:var(--text-secondary)">
+      You rated this swap: <span style="color:var(--accent)">{{ user_rating.score }}/5</span>
+      {% if user_rating.comment %}<div style="font-size:13px; color:var(--text-muted); margin-top:4px">{{ user_rating.comment }}</div>{% endif %}
+    </div>
+    {% elif can_rate %}
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px">Rate your experience with the other party (within 7 days of completion).</p>
+    <a href="{% url 'rate-swap' swap.pk %}" class="btn btn-secondary btn-sm">Rate This Swap</a>
+    {% else %}
+    <p style="font-size:13px; color:var(--text-muted)">Rating window has passed.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Feature 1: Dispute section -->
+  {% if swap.status == 'completed' %}
+  <div class="copies-section">
+    <h3>Dispute</h3>
+    {% if dispute %}
+    <div class="card">
+      <div class="card-body">
+        <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px">Status</div>
+        <div style="font-size:15px; font-weight:500; margin-bottom:8px">{{ dispute.get_status_display }}</div>
+        <div style="font-size:13px; color:var(--text-secondary)">Condition reported: {{ dispute.get_arrived_condition_display }}</div>
+        {% if dispute.description %}
+        <div style="font-size:13px; color:var(--text-muted); margin-top:8px">{{ dispute.description }}</div>
+        {% endif %}
+        {% if dispute.resolved_at %}
+        <div style="font-size:12px; color:var(--text-muted); margin-top:8px">Resolved {{ dispute.resolved_at|date:"M d, Y" }}</div>
+        {% endif %}
+      </div>
+    </div>
+    {% elif can_open_dispute %}
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px">
+      If the book arrived in a different condition than described, you can open a dispute within 48 hours of completion.
+    </p>
+    <a href="{% url 'open-dispute' swap.pk %}" class="btn btn-secondary btn-sm" style="color:#c96d6d">Open Dispute</a>
+    {% else %}
+    <p style="font-size:13px; color:var(--text-muted)">No dispute. The 48-hour dispute window has passed.</p>
     {% endif %}
   </div>
   {% endif %}

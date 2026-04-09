@@ -1,0 +1,44 @@
+{% extends "base_generic.html" %}
+{% block title %}Open Dispute — BookSwap{% endblock %}
+
+{% block content %}
+<div class="book-detail" style="max-width:520px">
+  <div style="margin-bottom:24px">
+    <a href="{% url 'swap-detail' swap.pk %}" class="text-muted" style="font-size:14px">← Back to Swap</a>
+  </div>
+
+  <h1 style="font-size:22px; margin-bottom:8px">Open a Dispute</h1>
+  <p style="font-size:13px; color:var(--text-muted); margin-bottom:32px">
+    Describe the condition the book arrived in. Our staff will review and resolve the dispute within 3 business days.
+  </p>
+
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-body">
+      <div style="font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px">Book</div>
+      <div style="font-size:16px; font-weight:500">{{ swap.book_instance.book.title }}</div>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label>Condition book arrived in</label>
+      <select name="arrived_condition" class="form-control" required>
+        <option value="">— Select —</option>
+        <option value="as_described">As Described</option>
+        <option value="worse_than_described">Worse Than Described</option>
+        <option value="damaged">Damaged</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Description (optional)</label>
+      <textarea name="description" class="form-control" rows="4"
+        placeholder="Please describe the issue in detail — any damage, missing pages, etc."></textarea>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:24px">
+      <button type="submit" class="btn btn-primary">Submit Dispute</button>
+      <a href="{% url 'swap-detail' swap.pk %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

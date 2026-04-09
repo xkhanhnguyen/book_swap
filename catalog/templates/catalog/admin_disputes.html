@@ -1,0 +1,59 @@
+{% extends "base_generic.html" %}
+{% block title %}Open Disputes — Admin{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:32px">
+  <h1>Open Disputes</h1>
+  <p style="font-size:13px; color:var(--text-muted)">Review and resolve open disputes.</p>
+</div>
+
+{% if disputes %}
+{% for dispute in disputes %}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-body">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px">
+      <div>
+        <div style="font-size:16px; font-weight:500; margin-bottom:4px">
+          Dispute #{{ dispute.pk }} — {{ dispute.swap.book_instance.book.title }}
+        </div>
+        <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px">
+          Opened by {{ dispute.opened_by.profile.display_name }} &middot; {{ dispute.opened_at|date:"M d, Y H:i" }}
+        </div>
+        <div style="font-size:13px; color:var(--text-secondary); margin-bottom:8px">
+          Condition reported: <strong>{{ dispute.get_arrived_condition_display }}</strong>
+        </div>
+        {% if dispute.description %}
+        <div style="font-size:13px; color:var(--text-secondary); background:var(--surface2); border-radius:var(--radius); padding:12px; margin-bottom:8px">
+          {{ dispute.description }}
+        </div>
+        {% endif %}
+        <div style="font-size:13px; color:var(--text-muted)">
+          Swap: <a href="{% url 'swap-detail' dispute.swap.pk %}" style="color:var(--accent)">#{{ dispute.swap.pk }}</a>
+          &middot; Owner: {{ dispute.swap.book_instance.user.profile.display_name }}
+          &middot; Requester: {{ dispute.swap.requester.profile.display_name }}
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; min-width:160px">
+        <form method="post" action="{% url 'resolve-dispute' dispute.pk %}">
+          {% csrf_token %}
+          <button name="action" value="requester" class="btn btn-primary btn-sm" style="width:100%">
+            Resolve for Requester
+          </button>
+        </form>
+        <form method="post" action="{% url 'resolve-dispute' dispute.pk %}">
+          {% csrf_token %}
+          <button name="action" value="owner" class="btn btn-secondary btn-sm" style="width:100%">
+            Resolve for Owner
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="empty-state">
+  <p>No open disputes.</p>
+</div>
+{% endif %}
+{% endblock %}

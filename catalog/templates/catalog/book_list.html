@@ -12,13 +12,59 @@
   {% endif %}
 </div>
 
-<!-- Filter bar -->
-<div style="display:flex; align-items:center; gap:10px; margin-bottom:24px">
-  <a href="{% url 'books' %}" class="btn btn-sm {% if not request.GET.available %}btn-primary{% else %}btn-secondary{% endif %}">All books</a>
-  <a href="{% url 'books' %}?available=1" class="btn btn-sm {% if request.GET.available %}btn-primary{% else %}btn-secondary{% endif %}">
-    Available to swap
-  </a>
-</div>
+<!-- Feature 3: Filter bar -->
+<form method="get" action="{% url 'books' %}" style="margin-bottom:24px">
+  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+    <!-- Availability -->
+    <button type="submit" name="available" value=""
+      class="btn btn-sm {% if not request.GET.available %}btn-primary{% else %}btn-secondary{% endif %}"
+      {% if not request.GET.available %}style="pointer-events:none"{% endif %}>All books</button>
+    <button type="submit" name="available" value="1"
+      class="btn btn-sm {% if request.GET.available %}btn-primary{% else %}btn-secondary{% endif %}">
+      Available to swap
+    </button>
+
+    <div style="flex:1; min-width:0"></div>
+
+    <!-- Genre filter -->
+    <select name="genre" class="form-control" style="width:auto; font-size:13px; height:34px; padding:0 10px"
+      onchange="this.form.submit()">
+      <option value="">All Genres</option>
+      {% for genre in genres %}
+      <option value="{{ genre.name }}" {% if current_genre == genre.name %}selected{% endif %}>{{ genre.name }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Condition filter -->
+    <select name="condition" class="form-control" style="width:auto; font-size:13px; height:34px; padding:0 10px"
+      onchange="this.form.submit()">
+      <option value="">All Conditions</option>
+      {% for value, label in conditions %}
+      <option value="{{ value }}" {% if current_condition == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Sort -->
+    <select name="sort" class="form-control" style="width:auto; font-size:13px; height:34px; padding:0 10px"
+      onchange="this.form.submit()">
+      <option value="">Sort: Popular</option>
+      <option value="popular" {% if current_sort == 'popular' %}selected{% endif %}>Most Popular</option>
+      <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest</option>
+      {% if user.is_authenticated %}
+      <option value="closest" {% if current_sort == 'closest' %}selected{% endif %}>Closest</option>
+      {% endif %}
+    </select>
+
+    {% if current_genre or current_condition or current_sort %}
+    <a href="{% url 'books' %}{% if request.GET.available %}?available=1{% endif %}" class="btn btn-sm btn-secondary" style="font-size:12px">Clear filters</a>
+    {% endif %}
+
+    <!-- preserve existing params when changing genre/condition/sort -->
+    {% if request.GET.available %}
+    <input type="hidden" name="available" value="{{ request.GET.available }}">
+    {% endif %}
+  </div>
+</form>
 
 {% if book_list %}
 <div class="book-grid">
@@ -68,7 +114,8 @@
   <p>No books available to swap yet.</p>
   <a href="{% url 'books' %}" class="btn btn-secondary">View all books</a>
   {% else %}
-  <p>No books yet.</p>
+  <p>No books found matching your filters.</p>
+  <a href="{% url 'books' %}" class="btn btn-secondary">Clear filters</a>
   {% endif %}
 </div>
 {% endif %}

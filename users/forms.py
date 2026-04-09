@@ -93,15 +93,27 @@ class UpdateProfileForm(forms.ModelForm):
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Ho Chi Minh City'}),
         help_text='Shown publicly as your general location (e.g. city name only)'
     )
+    # Feature 3: zip code
+    zip_code = forms.CharField(
+        max_length=20, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 70000'}),
+        help_text='Optional ZIP/postal code for location lookup',
+    )
     display_preference = forms.ChoiceField(
         choices=[('bookswap_id', 'BookSwap ID (anonymous)'), ('real_name', 'Real Name')],
         widget=forms.RadioSelect(),
         required=True,
     )
+    # Feature 8: email notifications
+    email_notifications = forms.BooleanField(
+        required=False,
+        label='Receive email notifications',
+        help_text='Get notified by email for swap requests, acceptances, and other activity.',
+    )
 
     class Meta:
         model = Profile
-        fields = ['avatar', 'bio', 'address', 'city', 'display_preference']
+        fields = ['avatar', 'bio', 'address', 'city', 'zip_code', 'display_preference', 'email_notifications']
 
 # Password Change Form
 class CustomPasswordChangeForm(PasswordChangeForm):

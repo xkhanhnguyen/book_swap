@@ -1,40 +1,42 @@
 from django.contrib import admin
+from django.utils import timezone
 
-# Register your models here.
-from .models import Author, Genre, Book, BookInstance, Language
+from .models import (
+    Author, Genre, Book, BookInstance, Language,
+    Dispute, Wishlist, SwapRating, ReadingList, BookReview, SwapRequest,
+)
 
-# admin.site.register(Book)
-# admin.site.register(Author)
 admin.site.register(Genre)
-# admin.site.register(BookInstance)
 admin.site.register(Language)
+admin.site.register(Wishlist)
+admin.site.register(SwapRating)
+admin.site.register(ReadingList)
+admin.site.register(BookReview)
+
 
 class BooksInstanceInline(admin.TabularInline):
     model = BookInstance
 
+
 class BooksInline(admin.TabularInline):
     model = Book
 
-# Define the admin class
+
 class AuthorAdmin(admin.ModelAdmin):
     list_display = ('last_name', 'first_name', 'date_of_birth')
-
     fields = ['first_name', 'last_name', ('date_of_birth')]
     inlines = [BooksInline]
 
-# Register the admin class with the associated model
+
 admin.site.register(Author, AuthorAdmin)
 
 
-
-# Register the Admin classes for Book using the decorator
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
     list_display = ('title', 'author', 'display_genre')
     inlines = [BooksInstanceInline]
-   
 
-# Register the Admin classes for BookInstance using the decorator
+
 @admin.register(BookInstance)
 class BookInstanceAdmin(admin.ModelAdmin):
     list_display = ('book', 'condition', 'type', 'status', 'user', 'date_posted', 'id')
@@ -50,7 +52,19 @@ class BookInstanceAdmin(admin.ModelAdmin):
     )
 
 
+def resolve_for_requester(modeladmin, request, queryset):
+    queryset.update(status='resolved_for_requester', resolved_at=timezone.now(), resolved_by=request.user)
+resolve_for_requester.short_description = 'Resolve selected disputes in favour of Requester'
 
 
+def resolve_for_owner(modeladmin, request, queryset):
+    queryset.update(status='resolved_for_owner', resolved_at=timezone.now(), resolved_by=request.user)
+resolve_for_owner.short_description = 'Resolve selected disputes in favour of Owner'
 
-    
+
+@admin.register(Dispute)
+class DisputeAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'swap', 'opened_by', 'arrived_condition', 'status', 'opened_at', 'resolved_at')
+    list_filter = ('status',)
+    actions = [resolve_for_requester, resolve_for_owner]
+    readonly_fields = ('opened_at',)

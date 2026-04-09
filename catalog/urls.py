@@ -14,19 +14,16 @@ urlpatterns = [
     path('genre/<int:pk>', views.GenreDetailView.as_view(), name='genre-detail'),
 
     path('mybooks/', views.BooksByUserListView.as_view(), name='my-swapped-book'),
-    path('allbooks/', views.BooksByAllListView.as_view(), name='all-books'), 
+    path('allbooks/', views.BooksByAllListView.as_view(), name='all-books'),
 
     # Add URLConf for librarian to renew a book.
     path('book/<uuid:pk>/renew/', views.renew_book_librarian, name='renew-book-librarian'),
 
-
     # create, update and delete authors
-    # path('author/create/', views.AuthorCreate.as_view(), name='author-create'),
     path('author/<int:pk>/update/', views.AuthorUpdate.as_view(), name='author-update'),
     path('author/<int:pk>/delete/', views.AuthorDelete.as_view(), name='author-delete'),
 
-
-     # create, update and delete books
+    # create, update and delete books
     path('book/create/', views.BookCreateView.as_view(), name='book-create'),
     path('book/<int:pk>/update/', views.BookUpdateView.as_view(), name='book-update'),
     path('book/<int:pk>/delete/', views.BookDeleteView.as_view(), name='book-delete'),
@@ -49,7 +46,27 @@ urlpatterns = [
 
     # notifications
     path('notifications/', views.notifications, name='notifications'),
+
+    # Feature 1: Dispute system
+    path('swap/<int:swap_pk>/dispute/open/', views.open_dispute, name='open-dispute'),
+    path('dispute/<int:dispute_pk>/resolve/', views.resolve_dispute, name='resolve-dispute'),
+    path('admin/disputes/', views.admin_disputes, name='admin-disputes'),
+
+    # Feature 2: Wishlist
+    path('wishlist/', views.wishlist, name='wishlist'),
+    path('wishlist/<int:pk>/delete/', views.delete_wishlist, name='delete-wishlist'),
+    path('wishlist/<int:pk>/fulfilled/', views.mark_fulfilled, name='wishlist-fulfilled'),
+    path('request-board/', views.request_board, name='request-board'),
+
+    # Feature 4: Rating
+    path('swap/<int:swap_pk>/rate/', views.rate_swap, name='rate-swap'),
+
+    # Feature 6: Reading list & reviews
+    path('shelf/', views.my_shelf, name='my-shelf'),
+    path('book/<int:book_pk>/shelf/', views.add_to_shelf, name='add-to-shelf'),
+    path('shelf/<int:pk>/remove/', views.remove_from_shelf, name='remove-from-shelf'),
+    path('book/<int:book_pk>/review/', views.write_review, name='write-review'),
+
+    # Feature 7: Swap history
+    path('swap-history/', views.swap_history, name='swap-history'),
 ]
-
-
-

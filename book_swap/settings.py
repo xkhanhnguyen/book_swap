@@ -211,3 +211,6 @@ SHIPPO_API_KEY = env('SHIPPO_API_KEY', default='')
 
 # Credits: 1 credit = CREDIT_RATE_USD worth of shipping
 CREDIT_RATE_USD = 3.0
+
+# SendGrid API key for transactional emails
+SENDGRID_API_KEY = env('SENDGRID_API_KEY', default='')

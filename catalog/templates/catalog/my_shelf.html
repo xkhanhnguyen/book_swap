@@ -1,0 +1,42 @@
+{% extends "base_generic.html" %}
+{% block title %}My Shelf — BookSwap{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:32px">
+  <div>
+    <h1>My Shelf</h1>
+    <p style="font-size:13px; color:var(--text-muted); margin-top:4px">Track your reading progress.</p>
+  </div>
+</div>
+
+{% for section_label, section_items in sections %}
+<div style="margin-bottom:40px">
+  <h3 style="font-size:14px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:16px">
+    {{ section_label }} ({{ section_items|length }})
+  </h3>
+  {% if section_items %}
+  {% for entry in section_items %}
+  <div class="copy-item">
+    <div style="flex:1">
+      <div style="font-size:15px; font-weight:500; color:var(--text); margin-bottom:2px">
+        <a href="{{ entry.book.get_absolute_url }}" style="color:var(--text); text-decoration:none">{{ entry.book.title }}</a>
+      </div>
+      {% if entry.book.author %}
+      <div style="font-size:13px; color:var(--text-muted)">by {{ entry.book.author }}</div>
+      {% endif %}
+      <div style="font-size:12px; color:var(--text-muted); margin-top:2px">Added {{ entry.added_at|date:"M d, Y" }}</div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center">
+      <form method="post" action="{% url 'remove-from-shelf' entry.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-secondary btn-sm" style="color:#c96d6d">Remove</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <p style="color:var(--text-muted); font-size:14px">Nothing here yet.</p>
+  {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

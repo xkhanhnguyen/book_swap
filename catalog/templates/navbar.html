@@ -6,6 +6,7 @@
     <div class="navbar-links">
       <a href="{% url 'books' %}">Books</a>
       <a href="{% url 'authors' %}">Authors</a>
+      <a href="{% url 'request-board' %}">Request Board</a>
     </div>
 
     <div class="navbar-right">
@@ -28,7 +29,15 @@
         <button class="dropdown-toggle" onclick="var d=this.closest('.dropdown');d.classList.toggle('open');event.stopPropagation()">{{ user.get_username }} <i class="fa fa-chevron-down" style="font-size:10px"></i></button>
         <div class="dropdown-menu">
           <a href="{% url 'my-swaps' %}">My Swaps</a>
+          <a href="{% url 'swap-history' %}">Swap History</a>
           <a href="{% url 'my-swapped-book' %}">My Books</a>
+          <a href="{% url 'my-shelf' %}">My Shelf</a>
+          <a href="{% url 'wishlist' %}">Wishlist</a>
+          {% if user.is_staff %}
+          <div class="dropdown-divider"></div>
+          <a href="{% url 'admin-disputes' %}">Disputes</a>
+          {% endif %}
+          <div class="dropdown-divider"></div>
           <a href="{% url 'account-settings' %}">Settings</a>
           <div class="dropdown-divider"></div>
           <form method="post" action="{% url 'logout' %}" style="margin:0">

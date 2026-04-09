@@ -2,9 +2,33 @@
 {% block title %}Account Settings — BookSwap{% endblock %}
 
 {% block content %}
-<div class="book-detail" style="max-width:540px">
+<div class="book-detail" style="max-width:560px">
   <h1 style="font-size:22px; margin-bottom:8px">Account Settings</h1>
   <p style="margin-bottom:32px; font-size:13px; color:var(--text-muted)">Your public ID: <strong style="color:var(--text)">{{ user.profile.anonymous_id }}</strong></p>
+
+  <!-- Feature 5: Verified Shipper status -->
+  {% if user.profile.is_verified_shipper %}
+  <div style="background:rgba(200,169,110,0.1); border:1px solid rgba(200,169,110,0.25); border-radius:var(--radius); padding:12px 16px; margin-bottom:24px; display:flex; align-items:center; gap:10px">
+    <span style="font-size:20px; color:var(--accent)">&#10003;</span>
+    <div>
+      <div style="font-size:14px; font-weight:500; color:var(--accent)">Verified Shipper</div>
+      <div style="font-size:12px; color:var(--text-muted)">You have completed {{ user.profile.completed_swaps_count }} swap{{ user.profile.completed_swaps_count|pluralize }} and earned the Verified Shipper badge.</div>
+    </div>
+  </div>
+  {% else %}
+  <div style="font-size:13px; color:var(--text-muted); margin-bottom:24px">
+    Complete 5 swaps to earn the Verified Shipper badge.
+    <strong style="color:var(--text)">{{ user.profile.completed_swaps_count }}/5 completed.</strong>
+  </div>
+  {% endif %}
+
+  <!-- Feature 4: Rating display -->
+  {% if user.profile.avg_rating %}
+  <div style="font-size:13px; color:var(--text-muted); margin-bottom:24px">
+    Your rating: <span style="color:var(--accent)">{{ user.profile.avg_rating }}/5</span>
+    ({{ user.profile.total_ratings }} rating{{ user.profile.total_ratings|pluralize }})
+  </div>
+  {% endif %}
 
   {% if user_form.errors or profile_form.errors %}
   <div class="alert alert-danger" style="margin-bottom:24px">
@@ -67,6 +91,23 @@
       </label>
       {{ profile_form.city }}
       <div style="font-size:12px; color:var(--text-muted); margin-top:5px">{{ profile_form.city.help_text }}</div>
+    </div>
+    <div class="form-group">
+      <label>ZIP / Postal Code</label>
+      {{ profile_form.zip_code }}
+      <div style="font-size:12px; color:var(--text-muted); margin-top:5px">{{ profile_form.zip_code.help_text }}</div>
+    </div>
+
+    <hr style="border-color:var(--border); margin:28px 0">
+
+    <!-- Feature 8: Email notifications -->
+    <h3 style="font-size:15px; margin-bottom:16px">Notifications</h3>
+    <div class="form-group">
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:normal; font-size:14px">
+        {{ profile_form.email_notifications }}
+        {{ profile_form.email_notifications.label }}
+      </label>
+      <div style="font-size:12px; color:var(--text-muted); margin-top:5px">{{ profile_form.email_notifications.help_text }}</div>
     </div>
 
     <div style="margin-top:28px; display:flex; gap:10px; align-items:center">

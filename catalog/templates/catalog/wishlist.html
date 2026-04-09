@@ -1,0 +1,70 @@
+{% extends "base_generic.html" %}
+{% block title %}My Wishlist — BookSwap{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:32px">
+  <div>
+    <h1>My Wishlist</h1>
+    <p style="font-size:13px; color:var(--text-muted); margin-top:4px">Books you're looking for — we'll notify you when they're listed for swap.</p>
+  </div>
+  <a href="{% url 'request-board' %}" class="btn btn-secondary btn-sm">View Request Board</a>
+</div>
+
+<!-- Add form -->
+<div class="card" style="margin-bottom:32px">
+  <div class="card-body">
+    <h3 style="font-size:15px; margin-bottom:16px">Add a book to wishlist</h3>
+    <form method="post">
+      {% csrf_token %}
+      <div style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:10px; align-items:end">
+        <div class="form-group" style="margin-bottom:0">
+          <label style="font-size:12px; color:var(--text-muted)">Title *</label>
+          <input type="text" name="title" class="form-control" placeholder="Book title" required>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label style="font-size:12px; color:var(--text-muted)">Author</label>
+          <input type="text" name="author" class="form-control" placeholder="Author name">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label style="font-size:12px; color:var(--text-muted)">ISBN</label>
+          <input type="text" name="isbn" class="form-control" placeholder="ISBN (optional)">
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Wishlist items -->
+{% if items %}
+{% for item in items %}
+<div class="copy-item">
+  <div style="flex:1">
+    <div style="font-size:15px; font-weight:500; color:var(--text); margin-bottom:2px">
+      {{ item.title }}
+      {% if item.fulfilled %}<span class="status-badge status-available" style="margin-left:8px; font-size:11px">Fulfilled</span>{% endif %}
+    </div>
+    {% if item.author %}<div style="font-size:13px; color:var(--text-muted)">by {{ item.author }}</div>{% endif %}
+    {% if item.isbn %}<div style="font-size:12px; color:var(--text-muted)">ISBN: {{ item.isbn }}</div>{% endif %}
+    <div style="font-size:12px; color:var(--text-muted); margin-top:4px">Added {{ item.created_at|date:"M d, Y" }}</div>
+  </div>
+  <div style="display:flex; gap:8px; align-items:center">
+    {% if not item.fulfilled %}
+    <form method="post" action="{% url 'wishlist-fulfilled' item.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-secondary btn-sm">Mark Found</button>
+    </form>
+    {% endif %}
+    <form method="post" action="{% url 'delete-wishlist' item.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-secondary btn-sm" style="color:#c96d6d">Remove</button>
+    </form>
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="empty-state">
+  <p>Your wishlist is empty. Add books you're looking for above.</p>
+</div>
+{% endif %}
+{% endblock %}

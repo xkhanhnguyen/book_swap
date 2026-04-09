@@ -1,0 +1,50 @@
+{% extends "base_generic.html" %}
+{% block title %}Rate Swap — BookSwap{% endblock %}
+
+{% block content %}
+<div class="book-detail" style="max-width:480px">
+  <div style="margin-bottom:24px">
+    <a href="{% url 'swap-detail' swap.pk %}" class="text-muted" style="font-size:14px">← Back to Swap</a>
+  </div>
+
+  <h1 style="font-size:22px; margin-bottom:8px">Rate Your Experience</h1>
+  <p style="font-size:13px; color:var(--text-muted); margin-bottom:32px">
+    How was swapping with <strong style="color:var(--text)">{{ rated_user.profile.display_name }}</strong>?
+  </p>
+
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-body">
+      <div style="font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px">Book</div>
+      <div style="font-size:16px; font-weight:500">{{ swap.book_instance.book.title }}</div>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label style="margin-bottom:12px; display:block">Rating</label>
+      <div style="display:flex; gap:8px; flex-wrap:wrap">
+        {% for i in "12345" %}
+        <label style="display:flex; flex-direction:column; align-items:center; cursor:pointer; gap:4px; padding:12px 16px; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; color:var(--text-secondary); transition:all .15s">
+          <input type="radio" name="score" value="{{ i }}" required style="display:none" onchange="this.closest('form').querySelectorAll('.star-label').forEach((l,idx)=>{l.style.borderColor=idx<{{ i }}?'var(--accent)':'var(--border)';l.style.color=idx<{{ i }}?'var(--accent)':'var(--text-secondary)'})">
+          <span style="font-size:22px">&#9733;</span>
+          <span>{{ i }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <div style="font-size:12px; color:var(--text-muted); margin-top:8px">1 = Poor &nbsp;&middot;&nbsp; 5 = Excellent</div>
+    </div>
+
+    <div class="form-group">
+      <label>Comment (optional)</label>
+      <textarea name="comment" class="form-control" rows="3" placeholder="Describe your experience..."></textarea>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:24px">
+      <button type="submit" class="btn btn-primary">Submit Rating</button>
+      <a href="{% url 'swap-detail' swap.pk %}" class="btn btn-secondary">Skip</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
