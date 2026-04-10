@@ -10,8 +10,25 @@
   <h1 style="font-size:22px; margin-bottom:8px">List my copy for swap</h1>
   <p style="margin-bottom:32px">You're adding <strong style="color:var(--text)">{{ book.title }}</strong> by {{ book.author }} to the swap pool. Others can request to swap with you.</p>
 
-  <form method="post" style="max-width:420px">
+  <form method="post" enctype="multipart/form-data" style="max-width:420px">
     {% csrf_token %}
+
+    <div class="form-group" style="margin-bottom:20px">
+      <label for="cover_photo_input">Book Photo <span style="color:var(--text-muted);font-size:13px">(optional — we'll suggest a condition)</span></label>
+      <input type="file" id="cover_photo_input" name="cover_photo" accept="image/*"
+             class="form-control" style="margin-top:6px">
+      <div id="condition-assessment" style="display:none; margin-top:10px; padding:10px; border-radius:6px; background:var(--card-bg, #f8f9fa); border:1px solid var(--border, #dee2e6); font-size:14px">
+        <div id="assessment-loading" style="display:none; color:var(--text-muted)">🤖 Analyzing book condition...</div>
+        <div id="assessment-result" style="display:none">
+          <strong id="assessment-condition"></strong>
+          <span id="assessment-confidence" style="color:var(--text-muted); margin-left:6px; font-size:12px"></span>
+          <p id="assessment-reason" style="margin:4px 0 6px; color:var(--text-muted)"></p>
+          <span style="font-size:12px; color:var(--text-muted)">You can change this if you disagree</span>
+        </div>
+        <div id="assessment-error" style="display:none; color:#dc3545"></div>
+      </div>
+    </div>
+
     <div class="form-group">
       <label>Condition</label>
       {{ form.condition }}
@@ -29,5 +46,58 @@
       <a href="{% url 'book-detail' book.pk %}" class="btn btn-secondary">Cancel</a>
     </div>
   </form>
+
+  <script>
+    document.getElementById('cover_photo_input').addEventListener('change', function () {
+      var file = this.files[0];
+      if (!file) return;
+
+      var assessmentBox = document.getElementById('condition-assessment');
+      var loadingEl = document.getElementById('assessment-loading');
+      var resultEl = document.getElementById('assessment-result');
+      var errorEl = document.getElementById('assessment-error');
+
+      assessmentBox.style.display = 'block';
+      loadingEl.style.display = 'block';
+      resultEl.style.display = 'none';
+      errorEl.style.display = 'none';
+
+      var formData = new FormData();
+      formData.append('image', file);
+
+      var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+      fetch('{% url "assess-book-condition" %}', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken },
+        body: formData,
+      })
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+          loadingEl.style.display = 'none';
+          if (data.error) {
+            errorEl.textContent = 'Could not assess — please select condition manually';
+            errorEl.style.display = 'block';
+            return;
+          }
+          document.getElementById('assessment-condition').textContent = 'Suggested: ' + data.condition;
+          document.getElementById('assessment-confidence').textContent = '(' + data.confidence + ' confidence)';
+          document.getElementById('assessment-reason').textContent = data.reason;
+          resultEl.style.display = 'block';
+
+          if (data.condition_code) {
+            var conditionSelect = document.getElementById('id_condition');
+            if (conditionSelect) {
+              conditionSelect.value = data.condition_code;
+            }
+          }
+        })
+        .catch(function () {
+          loadingEl.style.display = 'none';
+          errorEl.textContent = 'Could not assess — please select condition manually';
+          errorEl.style.display = 'block';
+        });
+    });
+  </script>
 </div>
 {% endblock %}

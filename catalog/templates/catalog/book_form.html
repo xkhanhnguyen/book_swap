@@ -27,6 +27,9 @@
     </div>
   </div>
 
+  <datalist id="author-suggestions"></datalist>
+  <datalist id="title-suggestions"></datalist>
+
   <form method="post">
     {% csrf_token %}
 
@@ -111,6 +114,54 @@ function showScanResult(msg, type) {
   el.textContent = msg;
 }
 
+// Title autocomplete
+(function () {
+  var input = document.getElementById('id_title');
+  var list  = document.getElementById('title-suggestions');
+  if (!input || !list) return;
+
+  var timer;
+  input.addEventListener('input', function () {
+    clearTimeout(timer);
+    var q = this.value.trim();
+    if (q.length < 1) { list.innerHTML = ''; return; }
+    timer = setTimeout(function () {
+      fetch('{% url "title-autocomplete" %}?q=' + encodeURIComponent(q))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          list.innerHTML = data.map(function (t) {
+            return '<option value="' + t.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '">';
+          }).join('');
+        })
+        .catch(function () {});
+    }, 200);
+  });
+})();
+
+// Author autocomplete
+(function () {
+  var input = document.getElementById('id_author_name');
+  var list  = document.getElementById('author-suggestions');
+  if (!input || !list) return;
+
+  var timer;
+  input.addEventListener('input', function () {
+    clearTimeout(timer);
+    var q = this.value.trim();
+    if (q.length < 1) { list.innerHTML = ''; return; }
+    timer = setTimeout(function () {
+      fetch('{% url "author-autocomplete" %}?q=' + encodeURIComponent(q))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          list.innerHTML = data.map(function (a) {
+            return '<option value="' + a.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '">';
+          }).join('');
+        })
+        .catch(function () {});
+    }, 200);
+  });
+})();
+
 function lookupISBN(isbn) {
   showScanResult('Looking up ISBN ' + isbn + '…', 'info');
   fetch('https://openlibrary.org/api/books?bibkeys=ISBN:' + isbn + '&format=json&jscmd=data')
@@ -128,9 +179,12 @@ function lookupISBN(isbn) {
         authorName = book.authors[0].name || '';
       }
 
-      // Try to fill in the title field
+      // Fill in title and author fields
       var titleField = document.querySelector('input[name="title"], #id_title');
       if (titleField) titleField.value = title;
+
+      var authorField = document.querySelector('#id_author_name');
+      if (authorField && authorName) authorField.value = authorName;
 
       showScanResult('Found: "' + title + '"' + (authorName ? ' by ' + authorName : '') + '. Genre must be selected manually.', 'success');
     })

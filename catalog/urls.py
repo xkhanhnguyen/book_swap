@@ -69,4 +69,19 @@ urlpatterns = [
 
     # Feature 7: Swap history
     path('swap-history/', views.swap_history, name='swap-history'),
+
+    # Analytics dashboard
+    path('analytics/', views.user_analytics, name='user-analytics'),
+
+    # Smart Book Condition Assessment
+    path('books/assess-condition/', views.assess_book_condition, name='assess-book-condition'),
+
+    # Book recommendations (ML)
+    path('book/<int:book_id>/recommendations/', views.book_recommendations, name='book-recommendations'),
+
+    # Author autocomplete
+    path('authors/autocomplete/', views.author_autocomplete, name='author-autocomplete'),
+
+    # Title autocomplete
+    path('books/autocomplete/', views.title_autocomplete, name='title-autocomplete'),
 ]

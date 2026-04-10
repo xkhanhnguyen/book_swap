@@ -147,4 +147,43 @@
   </div>
 
 </div>
+
+  <!-- ML Recommendations: You might also like -->
+  {% if user.is_authenticated %}
+  <div id="rec-section" class="copies-section" style="margin-top:40px; display:none">
+    <h3 style="margin-bottom:16px">You might also like</h3>
+    <div id="rec-loading" style="color:var(--text-muted); font-size:14px">Finding recommendations...</div>
+    <div id="rec-list" style="display:flex; flex-wrap:wrap; gap:16px"></div>
+  </div>
+  <script>
+  (function () {
+    fetch("{% url 'book-recommendations' book.pk %}")
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var recs = data.recommendations;
+        if (!recs || recs.length === 0) return;
+        var section = document.getElementById('rec-section');
+        var loading = document.getElementById('rec-loading');
+        var list    = document.getElementById('rec-list');
+        loading.style.display = 'none';
+        section.style.display = '';
+        recs.forEach(function (rec) {
+          var a = document.createElement('a');
+          a.href = rec.url;
+          a.style.cssText = 'text-decoration:none; width:130px; display:flex; flex-direction:column; gap:6px; flex-shrink:0';
+          var coverHtml = rec.cover
+            ? '<img src="' + rec.cover + '" alt="" style="width:130px; height:185px; object-fit:cover; border-radius:4px; background:var(--surface)">'
+            : '<div style="width:130px; height:185px; background:var(--surface); border-radius:4px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:11px">No cover</div>';
+          a.innerHTML = coverHtml
+            + '<div style="font-size:13px; font-weight:500; color:var(--text); line-height:1.3">' + rec.title + '</div>'
+            + '<div style="font-size:12px; color:var(--text-muted)">' + rec.author + '</div>';
+          list.appendChild(a);
+        });
+      })
+      .catch(function () {});
+  })();
+  </script>
+  {% endif %}
+
+</div>
 {% endblock %}

@@ -10,6 +10,12 @@ A peer-to-peer book swapping platform built with Django. Users list books they o
 - **Private address encryption** — addresses are encrypted with AES-256-GCM at rest and never exposed to other users; only the distance in km is shown
 - **Credit economy** — earn credits by shipping books (proportional to Shippo shipping cost), spend 1 credit to request a swap
 - **Shippo integration** — generate prepaid shipping labels directly from the swap detail page
+- **AI condition assessment** — Claude API evaluates book condition descriptions to flag inaccurate listings
+- **Dispute resolution** — buyers can open condition disputes on completed swaps; admins resolve them
+- **Wishlist & request board** — save wanted books and broadcast requests to potential swappers
+- **Swap ratings** — rate your swap partner (1–5 stars) after a completed exchange
+- **Reading lists & reviews** — track reading status (reading / completed / want to read) and leave book reviews
+- **ML recommendations** — TF-IDF model trained on 52k+ books suggests similar titles on book detail pages and the dashboard
 - **On-site notifications** — real-time alerts for swap requests, acceptances, rejections, and shipments
 - **Social login** — sign in with GitHub via OAuth2
 - **Display preference** — choose between your BookSwap ID (anonymous) or real name
@@ -33,9 +39,12 @@ New accounts start with **3 free credits**.
 | Backend | Django 4.2, Python 3.13 |
 | Database | SQLite (dev) |
 | Auth | django-environ, social-auth-app-django (GitHub OAuth) |
-| Geocoding | geopy (Nominatim) |
+| Geocoding | geopy (Nominatim), pgeocode (Vietnamese zip codes) |
 | Encryption | cryptography (AES-256-GCM) |
 | Shipping | Shippo v3 API |
+| Email | Gmail SMTP, SendGrid |
+| AI | Anthropic Claude API (book condition assessment) |
+| ML | scikit-learn TF-IDF, joblib, pandas |
 | Images | Pillow |
 | Deploy | Gunicorn, GitHub Actions (SSH + SCP) |
 
@@ -103,7 +112,18 @@ Test accounts (password: `testpass123`):
 | carol_lit | Da Nang | 6 |
 | dan_pages | Can Tho | 3 |
 
-### 6. Start the server
+### 6. Build the recommendation model
+
+```bash
+# Requires book_data.csv in the project root (same CSV used for import_books)
+python manage.py build_recommendation_model
+```
+
+This indexes the Django DB books + the full Kaggle dataset into a TF-IDF matrix and saves the model to `ml_models/book_recommender.pkl`. Re-run any time to rebuild from scratch. The `.pkl` file is excluded from git.
+
+If the model file is missing the app still runs normally — recommendation sections are simply hidden.
+
+### 7. Start the server
 
 ```bash
 python manage.py runserver
@@ -134,14 +154,19 @@ The GitHub Actions workflow (`.github/workflows/ci.yml`) deploys on every push t
 book_swap/
 ├── book_swap/          # Django project settings & URLs
 ├── catalog/            # Books, swaps, notifications, shipping
-│   ├── models.py       # Book, BookInstance, SwapRequest, CreditTransaction, Notification
-│   ├── views.py        # All swap flow logic
+│   ├── models.py       # Book, BookInstance, SwapRequest, Dispute, Wishlist,
+│   │                   # SwapRating, ReadingList, BookReview, CreditTransaction, Notification
+│   ├── views.py        # Swap flow, disputes, wishlist, ratings, reviews, recommendations
+│   ├── ml/
+│   │   └── recommender.py   # TF-IDF RecommendationEngine (lazy singleton)
 │   └── utils/
 │       ├── encryption.py    # AES-256-GCM helpers
 │       └── shippo_client.py # Shippo label generation
 ├── users/              # Auth, profiles, display preferences
 │   ├── models.py       # Profile with encrypted address + credit balance
 │   └── signals.py      # Auto-create profile on user signup
+├── store/              # Basic e-commerce (cart, checkout)
+├── ml_models/          # Saved model artifacts (*.pkl excluded from git)
 ├── static/             # CSS design system (dark minimalist theme)
 └── templates/          # Base layout, navbar, shared components
 ```

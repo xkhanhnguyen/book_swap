@@ -80,6 +80,8 @@ class BookInstance(models.Model):
     BOOK_TYPE = (('h', 'Hardcover'), ('p', 'Paperback'))
     type = models.CharField(max_length=1, choices=BOOK_TYPE, blank=True, default='m')
 
+    cover_photo = models.ImageField(upload_to='book_photos/', blank=True, null=True)
+
     class Meta:
         ordering = ['date_posted']
 
@@ -274,6 +276,19 @@ class ReadingList(models.Model):
 
     def __str__(self):
         return f'{self.user} — {self.book.title} ({self.status})'
+
+
+# ─── Analytics: Zip Code Geocode Cache ───────────────────────────────────────
+
+class ZipCodeCache(models.Model):
+    """Cache geocoded lat/lng for zip codes to avoid repeated Nominatim calls."""
+    zip_code  = models.CharField(max_length=20, unique=True)
+    latitude  = models.FloatField()
+    longitude = models.FloatField()
+    cached_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.zip_code} ({self.latitude}, {self.longitude})'
 
 
 class BookReview(models.Model):

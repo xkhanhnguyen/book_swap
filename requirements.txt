@@ -10,3 +10,7 @@ shippo
 sendgrid
 pgeocode
 requests
+anthropic
+scikit-learn
+joblib
+pandas

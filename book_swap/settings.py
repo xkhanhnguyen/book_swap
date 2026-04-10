@@ -214,3 +214,15 @@ CREDIT_RATE_USD = 3.0
 
 # SendGrid API key for transactional emails
 SENDGRID_API_KEY = env('SENDGRID_API_KEY', default='')
+
+# Anthropic Claude API key for book condition assessment
+ANTHROPIC_API_KEY = env('ANTHROPIC_API_KEY', default='')
+
+# Book Recommendation ML settings
+BOOKS_DATASET_PATH = BASE_DIR / 'book_data.csv'
+RECOMMENDATION_MODEL_PATH = 'ml_models/book_recommender.pkl'
+RECOMMENDATION_COUNT = 5
+
+# Analytics Dashboard settings
+NEARBY_BOOKS_RADIUS_MILES = 50
+ZIP_CACHE_EXPIRY_DAYS = 30

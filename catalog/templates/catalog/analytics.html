@@ -1,0 +1,883 @@
+{% extends "base_generic.html" %}
+{% block title %}Analytics — BookSwap{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+/* ── Page base ── */
+body { background: #faf8f5; }
+*, *::before, *::after { box-sizing: border-box; }
+
+.an-wrap {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  font-family: 'Nunito', sans-serif;
+  color: #3d3530;
+}
+
+/* ── Section pill labels ── */
+.sec-pill {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  padding: 3px 10px;
+  border-radius: 50px;
+  margin-bottom: 6px;
+}
+.sec-pill-coral    { background: #f9ddd9; color: #b5584a; }
+.sec-pill-sage     { background: #d4e8e0; color: #3d7a65; }
+.sec-pill-lavender { background: #e4daf0; color: #6b4fa0; }
+.sec-pill-butter   { background: #f7edce; color: #8a6a1a; }
+
+/* ── Section title ── */
+.sec-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: #3d3530;
+  margin: 0 0 1rem;
+}
+
+/* ── Section divider ── */
+.sec-divider {
+  text-align: center;
+  font-size: 0.55rem;
+  letter-spacing: 0.3em;
+  color: #8c7b75;
+  opacity: 0.5;
+  margin: 1.75rem 0;
+}
+
+/* ── Section spacing ── */
+.an-section { margin-bottom: 2.5rem; }
+
+/* ── Cards ── */
+.an-card {
+  background: #ffffff;
+  border: 0.5px solid #ede8e3;
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 12px;
+}
+
+/* ── Hero strip ── */
+.hero-strip {
+  background: #ffffff;
+  border: 0.5px solid #ede8e3;
+  border-top: 3px solid #e8a598;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+.hero-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.hero-stat {
+  text-align: center;
+  padding: 1.75rem 1rem;
+  border-right: 0.5px solid #ede8e3;
+}
+.hero-stat:last-child { border-right: none; }
+.hero-num {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2.4rem;
+  color: #e8a598;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.hero-num-sage { color: #a8c5b5; }
+.hero-label {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #8c7b75;
+}
+.hero-msg {
+  border-top: 0.5px solid #ede8e3;
+  padding: 0.75rem 1.5rem;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #8c7b75;
+  text-align: center;
+}
+
+/* ── Status bar ── */
+.status-bar-wrap {
+  height: 10px;
+  border-radius: 50px;
+  display: flex;
+  overflow: hidden;
+  background: #ede8e3;
+}
+.sbar-seg { height: 100%; transition: width 0.4s; }
+
+.status-bar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 10px;
+}
+.sbar-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: #8c7b75;
+}
+.sbar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Stat mini cards ── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.stat-mini {
+  background: #ffffff;
+  border: 0.5px solid #ede8e3;
+  border-top: 3px solid #e8a598;
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+}
+.stat-mini-num {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 1.9rem;
+  color: #e8a598;
+  line-height: 1.1;
+}
+.stat-mini-lbl {
+  font-size: 0.72rem;
+  color: #8c7b75;
+  margin-top: 2px;
+}
+
+/* ── Most wanted list ── */
+.wanted-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: #faf8f5;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  color: #3d3530;
+  margin-bottom: 5px;
+}
+.wanted-pill {
+  background: #f9ddd9;
+  color: #b5584a;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 50px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: 0.75rem;
+}
+
+/* ── Swap activity ── */
+.swap-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 0.5px solid #ede8e3;
+  font-size: 0.82rem;
+}
+.swap-row:last-child { border-bottom: none; }
+.swap-row-lbl { color: #3d3530; }
+.swap-row-val { font-weight: 700; color: #3d3530; }
+.swap-row-val-sage { font-weight: 700; color: #a8c5b5; }
+
+/* ── Rate rows ── */
+.rate-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 0.5px solid #ede8e3;
+  font-size: 0.82rem;
+  gap: 1rem;
+}
+.rate-row:last-child { border-bottom: none; }
+.rate-pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 50px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.rate-pill-sage   { background: #d4e8e0; color: #3d7a65; }
+.rate-pill-butter { background: #f7edce; color: #8a6a1a; }
+.rate-pill-coral  { background: #f9ddd9; color: #b5584a; }
+.rate-pill-gray   { background: #ede8e3; color: #8c7b75; }
+
+/* ── Reading journey headline ── */
+.headline-card {
+  background: #ffffff;
+  border: 0.5px solid #ede8e3;
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 12px;
+}
+.headline-book-count {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.1rem;
+  color: #3d3530;
+  margin-bottom: 4px;
+}
+.headline-sub {
+  font-size: 0.82rem;
+  color: #8c7b75;
+}
+
+/* ── Reading cards ── */
+.read-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.read-card {
+  background: #ffffff;
+  border: 0.5px solid #ede8e3;
+  border-top: 3px solid #c4b5d4;
+  border-radius: 14px;
+  padding: 1rem;
+}
+.read-cover {
+  width: 100%;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+.read-cover-placeholder {
+  width: 100%;
+  height: 80px;
+  background: #e4daf0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+.read-title {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  color: #3d3530;
+  line-height: 1.3;
+}
+.read-author {
+  font-size: 0.75rem;
+  color: #8c7b75;
+  margin-top: 2px;
+}
+.read-pills {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.read-date-pill {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 50px;
+  background: #f7edce;
+  color: #8a6a1a;
+}
+.read-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 50px;
+  background: #d4e8e0;
+  color: #3d7a65;
+}
+
+/* ── Reading stats strip ── */
+.rstrip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: #faf8f5;
+  border-radius: 12px;
+  padding: 0.75rem;
+  text-align: center;
+  gap: 0.5rem;
+}
+.rstrip-item {
+  font-size: 0.8rem;
+  color: #8c7b75;
+}
+
+/* ── Nearby section ── */
+.nearby-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: center;
+}
+.nearby-big-num {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2.8rem;
+  color: #e8a598;
+  line-height: 1;
+}
+.nearby-sublabel {
+  font-size: 0.8rem;
+  color: #8c7b75;
+  margin-top: 4px;
+  margin-bottom: 12px;
+}
+.genre-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 0.5rem;
+}
+.genre-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 50px;
+}
+.genre-tag-coral  { background: #f9ddd9; color: #b5584a; }
+.genre-tag-sage   { background: #d4e8e0; color: #3d7a65; }
+.genre-tag-butter { background: #f7edce; color: #8a6a1a; }
+
+.nearby-cta {
+  display: inline-block;
+  background: #e8a598;
+  color: #ffffff;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 0.6rem 1.4rem;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  margin-top: 1rem;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.nearby-cta:hover { background: #d4897a; color: #ffffff; }
+
+.cond-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: #8c7b75;
+  margin-bottom: 6px;
+}
+.cond-count {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  color: #3d3530;
+}
+
+/* ── Demand accordion ── */
+.demand-toggle {
+  background: #d4e8e0;
+  color: #3d7a65;
+  border: none;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 50px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background 0.2s;
+}
+.demand-toggle:hover { background: #c0ddd5; }
+
+.demand-body { display: none; }
+.demand-body.open { display: block; }
+
+.drow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 0;
+  border-bottom: 0.5px solid #ede8e3;
+  font-size: 0.82rem;
+  gap: 10px;
+}
+.drow:last-child { border-bottom: none; }
+.drow-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #3d3530;
+}
+.dbar-wrap {
+  width: 80px;
+  height: 5px;
+  background: #ede8e3;
+  border-radius: 50px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.dbar-fill {
+  height: 100%;
+  border-radius: 50px;
+  transition: width 0.3s;
+}
+.demand-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 50px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Empty state ── */
+.empty {
+  font-size: 0.85rem;
+  color: #8c7b75;
+  text-align: center;
+  padding: 1.5rem;
+  border: 1.5px dashed #ede8e3;
+  border-radius: 14px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .hero-stats-row         { grid-template-columns: 1fr; }
+  .hero-stat              { border-right: none; border-bottom: 0.5px solid #ede8e3; }
+  .hero-stat:last-child   { border-bottom: none; }
+  .stat-grid              { grid-template-columns: 1fr; }
+  .nearby-two-col         { grid-template-columns: 1fr; }
+  .read-grid              {
+    display: flex;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    gap: 0.75rem;
+    padding-bottom: 0.5rem;
+  }
+  .read-card              { min-width: 160px; flex-shrink: 0; }
+  .rstrip                 { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 641px) and (max-width: 880px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+
+<div class="an-wrap">
+
+<!-- Page header -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem">
+  <div>
+    <h1 style="font-family:'DM Serif Display',serif; font-weight:400; font-size:1.9rem; color:#3d3530; margin:0 0 4px">Analytics</h1>
+    <p style="font-size:0.82rem; color:#8c7b75; margin:0">Your personal reading journey</p>
+  </div>
+  <a href="{% url 'my-swaps' %}" style="font-family:'Nunito',sans-serif; font-size:0.78rem; font-weight:700; color:#8c7b75; border:0.5px solid #ede8e3; background:#ffffff; padding:0.45rem 1.1rem; border-radius:50px; text-decoration:none; white-space:nowrap">My Swaps</a>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     S1 · HERO
+══════════════════════════════════════════════════════════ -->
+<div class="an-section">
+  <div class="hero-strip">
+    <div class="hero-stats-row">
+      <div class="hero-stat">
+        <div style="font-size:1.3rem; margin-bottom:8px">📚</div>
+        <div class="hero-num">{{ total_listed }}</div>
+        <div class="hero-label">Books Listed</div>
+      </div>
+      <div class="hero-stat">
+        <div style="font-size:1.3rem; margin-bottom:8px">🔄</div>
+        <div class="hero-num">{{ total_swaps_completed }}</div>
+        <div class="hero-label">Swaps Completed</div>
+      </div>
+      <div class="hero-stat">
+        <div style="font-size:1.3rem; margin-bottom:8px">◈</div>
+        <div class="hero-num hero-num-sage">{{ current_balance }}</div>
+        <div class="hero-label">Credits Available</div>
+      </div>
+    </div>
+    <div class="hero-msg">
+      {% if total_swaps_completed == 0 %}Welcome — list your first book to start swapping.
+      {% elif total_swaps_completed <= 3 %}You're finding your rhythm.
+      {% elif total_swaps_completed <= 10 %}A wonderful little library is forming.
+      {% else %}A true book traveler — thank you for sharing.{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="sec-divider">· · ·</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     S2 · MY BOOKS
+══════════════════════════════════════════════════════════ -->
+<div class="an-section">
+  <span class="sec-pill sec-pill-coral">library</span>
+  <h2 class="sec-title">My Books</h2>
+
+  {% if total_listed > 0 %}
+
+  <!-- Status breakdown bar -->
+  <div class="an-card">
+    <div style="font-size:0.72rem; color:#8c7b75; margin-bottom:6px">Book status breakdown</div>
+    <div class="status-bar-wrap">
+      <div class="sbar-seg" style="width:{% widthratio available_clean total_listed 100 %}%; background:#e8a598;"></div>
+      <div class="sbar-seg" style="width:{% widthratio books_with_pending total_listed 100 %}%; background:#f0d9a0;"></div>
+      <div class="sbar-seg" style="width:{% widthratio in_transit total_listed 100 %}%; background:#c4b5d4;"></div>
+      <div class="sbar-seg" style="width:{% widthratio swapped_out total_listed 100 %}%; background:#a8c5b5;"></div>
+    </div>
+    <div class="status-bar-legend">
+      <div class="sbar-legend-item"><div class="sbar-dot" style="background:#e8a598"></div>Available</div>
+      <div class="sbar-legend-item"><div class="sbar-dot" style="background:#f0d9a0"></div>Pending</div>
+      <div class="sbar-legend-item"><div class="sbar-dot" style="background:#c4b5d4"></div>In Transit</div>
+      <div class="sbar-legend-item"><div class="sbar-dot" style="background:#a8c5b5"></div>Swapped Out</div>
+    </div>
+  </div>
+
+  <!-- 3 stat mini cards -->
+  <div class="stat-grid">
+    <div class="stat-mini">
+      <div class="stat-mini-num">{{ available_clean }}</div>
+      <div class="stat-mini-lbl">Available for swap</div>
+    </div>
+    <div class="stat-mini">
+      <div class="stat-mini-num">{{ books_with_pending }}</div>
+      <div class="stat-mini-lbl">Pending requests</div>
+    </div>
+    <div class="stat-mini">
+      <div class="stat-mini-num">{{ swapped_out }}</div>
+      <div class="stat-mini-lbl">Books sent out</div>
+    </div>
+  </div>
+
+  <!-- Most wanted -->
+  <div class="an-card">
+    <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:#8c7b75; margin-bottom:10px">Most Wanted</div>
+    {% if hot_books %}
+      {% for hb in hot_books %}
+      <div class="wanted-row">
+        <span>{{ hb.book__title }}</span>
+        <span class="wanted-pill">{{ hb.req_count }} request{{ hb.req_count|pluralize }}</span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:#8c7b75; font-size:0.82rem; margin:0">No standout requests yet.</p>
+    {% endif %}
+  </div>
+
+  {% else %}
+  <div class="empty">Add your first book to get started.</div>
+  {% endif %}
+</div>
+
+<div class="sec-divider">· · ·</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     S3 · SWAP ACTIVITY
+══════════════════════════════════════════════════════════ -->
+<div class="an-section">
+  <span class="sec-pill sec-pill-sage">activity</span>
+  <h2 class="sec-title">Swap Activity</h2>
+
+  {% if total_sent > 0 %}
+
+  <div class="an-card">
+    <div class="swap-row">
+      <span class="swap-row-lbl">Requests sent (all time)</span>
+      <span class="swap-row-val">{{ total_sent }}</span>
+    </div>
+    <div class="swap-row">
+      <span class="swap-row-lbl">Waiting on response</span>
+      <span class="swap-row-val">{{ pending_sent }}</span>
+    </div>
+    <div class="swap-row">
+      <span class="swap-row-lbl">Accepted, awaiting shipment</span>
+      <span class="swap-row-val">{{ accepted_sent }}</span>
+    </div>
+    <div class="swap-row">
+      <span class="swap-row-lbl">Completed (books received)</span>
+      <span class="swap-row-val-sage">{{ completed_sent }}</span>
+    </div>
+    <div class="swap-row">
+      <span class="swap-row-lbl">Declined by owner</span>
+      <span class="swap-row-val">{{ declined_sent }}</span>
+    </div>
+  </div>
+
+  <div class="an-card">
+    <div class="rate-row">
+      <span style="color:#3d3530">Success rate as requester</span>
+      {% if acceptance_rate >= 80 %}
+        <span class="rate-pill rate-pill-sage">{{ acceptance_rate }}%&nbsp;&nbsp;Doing great</span>
+      {% elif acceptance_rate >= 50 %}
+        <span class="rate-pill rate-pill-butter">{{ acceptance_rate }}%&nbsp;&nbsp;Pretty good</span>
+      {% else %}
+        <span class="rate-pill rate-pill-coral">{{ acceptance_rate }}%&nbsp;&nbsp;Room to grow</span>
+      {% endif %}
+    </div>
+    <div class="rate-row">
+      <span style="color:#3d3530">Fulfillment rate as sender</span>
+      {% if fulfillment_rate >= 80 %}
+        <span class="rate-pill rate-pill-sage">{{ fulfillment_rate }}%&nbsp;&nbsp;Doing great</span>
+      {% elif fulfillment_rate >= 50 %}
+        <span class="rate-pill rate-pill-butter">{{ fulfillment_rate }}%&nbsp;&nbsp;Pretty good</span>
+      {% elif fulfillment_rate == 0 %}
+        <span class="rate-pill rate-pill-gray">No data yet</span>
+      {% else %}
+        <span class="rate-pill rate-pill-coral">{{ fulfillment_rate }}%&nbsp;&nbsp;Room to grow</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {% else %}
+  <div class="empty">Your swap history will appear here.</div>
+  {% endif %}
+</div>
+
+<div class="sec-divider">· · ·</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     S4 · READING JOURNEY
+══════════════════════════════════════════════════════════ -->
+<div class="an-section">
+  <span class="sec-pill sec-pill-lavender">journey</span>
+  <h2 class="sec-title">Reading Journey</h2>
+
+  <div class="headline-card">
+    <div class="headline-book-count">You've read {{ books_read }} book{{ books_read|pluralize }} through BookSwap.</div>
+    <div class="headline-sub">Every book received counts as one read.</div>
+  </div>
+
+  {% if books_read > 0 %}
+
+  <!-- 12-month bar chart -->
+  <div class="an-card" style="margin-bottom:12px">
+    <canvas id="readingChart" height="180"></canvas>
+  </div>
+
+  <!-- Last 3 books received -->
+  {% if reading_history_recent %}
+  <div class="read-grid">
+    {% for swap in reading_history_recent %}
+    <div class="read-card">
+      {% if swap.book_instance.book.cover_url %}
+        <img src="{{ swap.book_instance.book.cover_url }}" alt="" class="read-cover">
+      {% else %}
+        <div class="read-cover-placeholder">📖</div>
+      {% endif %}
+      <div class="read-title">{{ swap.book_instance.book.title }}</div>
+      <div class="read-author">{{ swap.book_instance.book.author }}</div>
+      <div class="read-pills">
+        <span class="read-date-pill">{{ swap.created_at|date:"M Y" }}</span>
+        <span class="read-badge">read</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Reading stats strip -->
+  <div class="rstrip">
+    <div class="rstrip-item">📖 <strong style="color:#3d3530">{{ books_read_this_year }}</strong> books this year</div>
+    <div class="rstrip-item">📅 Best month: <strong style="color:#3d3530">{% if most_active_month_name %}{{ most_active_month_name }}{% else %}—{% endif %}</strong></div>
+    <div class="rstrip-item">🌱 <strong style="color:#3d3530">{{ longest_streak }}</strong> month streak</div>
+  </div>
+
+  {% else %}
+  <div class="empty">Books you receive will show up here.</div>
+  {% endif %}
+</div>
+
+<div class="sec-divider">· · ·</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     S5 · NEAR ME
+══════════════════════════════════════════════════════════ -->
+<div class="an-section">
+  <span class="sec-pill sec-pill-butter">nearby</span>
+  <h2 class="sec-title">Books Near You</h2>
+
+  {% if not has_location %}
+  <div class="empty">
+    Add your zip code in <a href="{% url 'account-settings' %}" style="color:#e8a598; text-decoration:underline">account settings</a> to see books near you.
+  </div>
+
+  {% elif nearby_total == 0 %}
+  <div class="empty">No books found nearby — check back soon.</div>
+
+  {% else %}
+  <div class="an-card">
+    <div class="nearby-two-col">
+      <div>
+        <div class="nearby-big-num">{{ nearby_total }}</div>
+        <div class="nearby-sublabel">books within {{ radius_miles }} miles</div>
+        {% if nearby_top_genres %}
+        <div class="genre-pills">
+          {% for name, count in nearby_top_genres %}
+          <span class="genre-tag {% cycle 'genre-tag-coral' 'genre-tag-sage' 'genre-tag-butter' %}">{{ name }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <a href="{% url 'books' %}?available=1" class="nearby-cta">Browse books near you</a>
+      </div>
+      <div>
+        {% for label, count in nearby_by_condition.items %}
+        <div class="cond-row">
+          <span>{{ label }}</span>
+          <span class="cond-count">{{ count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="sec-divider">· · ·</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     S6 · DEMAND INSIGHTS
+══════════════════════════════════════════════════════════ -->
+<div class="an-section">
+  <span class="sec-pill sec-pill-sage">insights</span>
+  <h2 class="sec-title">Demand Insights</h2>
+
+  <button class="demand-toggle" id="demandToggle" onclick="toggleDemand()">See demand for your books ▾</button>
+
+  <div class="demand-body" id="demandBody">
+    <div class="an-card" style="margin-top:0">
+      {% if demand_listings %}
+      {% for copy in demand_listings %}
+      <div class="drow">
+        <div class="drow-title">{{ copy.book.title }}</div>
+        <div class="dbar-wrap">
+          <div class="dbar-fill" style="
+            width:{% if copy.request_count == 0 %}0{% elif copy.request_count == 1 %}33{% elif copy.request_count == 2 %}66{% else %}100{% endif %}%;
+            background:{% if copy.request_count == 0 %}#8c7b75{% elif copy.request_count == 1 %}#b8d4e8{% elif copy.request_count == 2 %}#e8a598{% else %}#c97060{% endif %};
+          "></div>
+        </div>
+        {% if copy.request_count == 0 %}
+          <span class="demand-pill" style="background:#ede8e3; color:#8c7b75">Waiting</span>
+        {% elif copy.request_count == 1 %}
+          <span class="demand-pill" style="background:#daeaf7; color:#2d6fa0">Interested</span>
+        {% elif copy.request_count == 2 %}
+          <span class="demand-pill" style="background:#f9ddd9; color:#b5584a">In Demand</span>
+        {% else %}
+          <span class="demand-pill" style="background:#fad4d4; color:#9a2f2f">Hot</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% else %}
+      <div class="empty" style="border:none; padding:1rem 0">No requests yet on your listings.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+</div><!-- /.an-wrap -->
+
+<!-- ══════════════════════════════════════════════════════════
+     CHART.JS INIT
+══════════════════════════════════════════════════════════ -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  Chart.defaults.font.family = 'Nunito';
+  Chart.defaults.color = '#8c7b75';
+  Chart.defaults.plugins.legend.display = false;
+
+  /* ── 12-month reading bar chart ── */
+  {% if books_read > 0 %}
+  (function () {
+    var el = document.getElementById('readingChart');
+    if (!el) return;
+    var data   = {{ chart_data_vals|safe }};
+    var curIdx = {{ current_month_idx }};
+    var colors = data.map(function (_, i) {
+      return i === curIdx ? '#c97060' : '#e8a598';
+    });
+    new Chart(el, {
+      type: 'bar',
+      data: {
+        labels: {{ chart_labels|safe }},
+        datasets: [{
+          data: data,
+          backgroundColor: colors,
+          borderRadius: 6,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        animation: { duration: 800, easing: 'easeInOutQuart' },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#3d3530',
+            cornerRadius: 8,
+            padding: 10,
+            titleFont: { family: 'Nunito' },
+            bodyFont:  { family: 'Nunito' },
+            callbacks: {
+              label: function (c) {
+                return c.parsed.y + ' book' + (c.parsed.y !== 1 ? 's' : '');
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid:   { display: false },
+            border: { display: false },
+            ticks: {
+              color: '#8c7b75',
+              font: { size: window.innerWidth < 480 ? 9 : 11 }
+            }
+          },
+          y: {
+            display:    false,
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  })();
+  {% endif %}
+});
+
+function toggleDemand() {
+  var body = document.getElementById('demandBody');
+  var btn  = document.getElementById('demandToggle');
+  if (body.classList.contains('open')) {
+    body.classList.remove('open');
+    btn.textContent = 'See demand for your books ▾';
+  } else {
+    body.classList.add('open');
+    btn.textContent = 'Hide demand for your books ▴';
+  }
+}
+</script>
+
+{% endblock %}

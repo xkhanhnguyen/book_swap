@@ -9,7 +9,7 @@ import math
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.admin.views.decorators import staff_member_required
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.utils import timezone
@@ -21,7 +21,7 @@ from .models import (
     CreditTransaction, Notification, Dispute, Wishlist, SwapRating,
     ReadingList, BookReview,
 )
-from catalog.forms import RenewBookForm, AddCopyForm
+from catalog.forms import RenewBookForm, AddCopyForm, BookForm
 from catalog.utils.email import send_notification_email
 
 
@@ -256,29 +256,36 @@ class AuthorDelete(DeleteView):
 
 # ─── Book CRUD ────────────────────────────────────────────────────────────────
 
-class BookCreateView(LoginRequiredMixin, CreateWithInlinesView):
+class BookCreateView(LoginRequiredMixin, CreateView):
     model = Book
-    inclines = [Author]
-    fields = ['title', 'author', 'summary', 'genre']
+    form_class = BookForm
     template_name = 'catalog/book_form.html'
 
-    def get_success_url(self):
+    def form_valid(self, form):
+        book = form.save(commit=False)
+        book.author = form.get_or_create_author()
+        book.save()
+        form.save_m2m()
         messages.success(self.request, 'Your book-swap has been created successfully.')
-        return self.object.get_absolute_url()
+        return redirect(book.get_absolute_url())
 
 
 class BookUpdateView(LoginRequiredMixin, UpdateView):
     model = Book
-    fields = ['title', 'author', 'summary', 'genre']
+    form_class = BookForm
+
+    def form_valid(self, form):
+        book = form.save(commit=False)
+        book.author = form.get_or_create_author()
+        book.save()
+        form.save_m2m()
+        messages.success(self.request, 'Your book has been updated successfully.')
+        return redirect(book.get_absolute_url())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['update'] = True
         return context
-
-    def get_success_url(self):
-        messages.success(self.request, 'Your book has been updated successfully.')
-        return reverse_lazy('book')
 
     def get_queryset(self):
         return self.model.objects.filter(author=self.request.user)
@@ -306,12 +313,15 @@ def add_copy(request, book_pk):
         return redirect('book-detail', pk=book_pk)
 
     if request.method == 'POST':
-        form = AddCopyForm(request.POST)
+        form = AddCopyForm(request.POST, request.FILES)
         if form.is_valid():
             copy = form.save(commit=False)
             copy.book = book
             copy.user = request.user
             copy.status = 'a'
+            cover = request.FILES.get('cover_photo')
+            if cover:
+                copy.cover_photo = cover
             copy.save()
 
             # Feature 2: notify wishlist users
@@ -573,11 +583,42 @@ def my_swaps(request):
         created_at__gte=seven_days_ago,
     ).exclude(id__in=rated_swap_ids).select_related('book_instance__book')
 
+    # Recommendations: seed from most recently listed book, fallback to most recent request
+    rec_books = []
+    rec_source_title = ''
+    try:
+        from django.conf import settings as _settings
+        from catalog.ml.recommender import get_engine
+
+        seed_book = None
+        recent_instance = (
+            BookInstance.objects
+            .filter(user=request.user, status='a')
+            .select_related('book__author')
+            .order_by('-date_posted')
+            .first()
+        )
+        if recent_instance:
+            seed_book = recent_instance.book
+        else:
+            recent_sent = sent.order_by('-created_at').first()
+            if recent_sent:
+                seed_book = recent_sent.book_instance.book
+
+        if seed_book:
+            n = getattr(_settings, 'RECOMMENDATION_COUNT', 5)
+            rec_books = get_engine().get_recommendations(seed_book, request.user, n=n)
+            rec_source_title = seed_book.title
+    except Exception:
+        pass
+
     return render(request, 'catalog/my_swaps.html', {
         'sent': sent,
         'received': received,
         'transactions': transactions,
         'pending_ratings': pending_ratings,
+        'rec_books': rec_books,
+        'rec_source_title': rec_source_title,
     })
 
 
@@ -1053,3 +1094,407 @@ def swap_history(request):
         'timeline': timeline,
         'stats': stats,
     })
+
+
+# ─── Smart Book Condition Assessment ─────────────────────────────────────────
+
+@login_required
+def assess_book_condition(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    image_file = request.FILES.get('image')
+    if not image_file:
+        return JsonResponse({'error': 'No image provided'}, status=400)
+
+    import base64
+    import json as json_module
+    import anthropic
+    from django.conf import settings as django_settings
+
+    try:
+        image_data = base64.standard_b64encode(image_file.read()).decode('utf-8')
+        media_type = image_file.content_type or 'image/jpeg'
+
+        client = anthropic.Anthropic(api_key=django_settings.ANTHROPIC_API_KEY)
+
+        message = client.messages.create(
+            model='claude-opus-4-5',
+            max_tokens=256,
+            messages=[
+                {
+                    'role': 'user',
+                    'content': [
+                        {
+                            'type': 'image',
+                            'source': {
+                                'type': 'base64',
+                                'media_type': media_type,
+                                'data': image_data,
+                            },
+                        },
+                        {
+                            'type': 'text',
+                            'text': (
+                                'You are assessing the condition of a used book for a book swap platform.\n'
+                                'Look at this book photo and respond with ONLY a JSON object in this exact format:\n'
+                                '{\n'
+                                '  "condition": "Like New" | "Good" | "Fair" | "Poor",\n'
+                                '  "confidence": "high" | "medium" | "low",\n'
+                                '  "reason": "one sentence explanation"\n'
+                                '}\n'
+                                'Condition guidelines:\n'
+                                '- Like New: no visible wear, clean pages, tight spine\n'
+                                '- Good: minor wear, small marks, solid binding\n'
+                                '- Fair: noticeable wear, possible writing/highlights, readable\n'
+                                '- Poor: heavy damage, broken spine, missing pages'
+                            ),
+                        },
+                    ],
+                }
+            ],
+        )
+
+        response_text = message.content[0].text.strip()
+        # Strip markdown code fences if present
+        if response_text.startswith('```'):
+            lines = response_text.splitlines()
+            response_text = '\n'.join(
+                line for line in lines
+                if not line.strip().startswith('```') and not line.strip() == 'json'
+            )
+
+        result = json_module.loads(response_text)
+
+        # Map Claude's condition labels to the existing BookInstance condition codes
+        condition_map = {
+            'Like New': 'l',
+            'Good': 'g',
+            'Fair': 'a',
+            'Poor': 'a',
+        }
+        condition_code = condition_map.get(result.get('condition', ''), '')
+
+        return JsonResponse({
+            'condition': result.get('condition', ''),
+            'confidence': result.get('confidence', ''),
+            'reason': result.get('reason', ''),
+            'condition_code': condition_code,
+        })
+
+    except Exception:
+        return JsonResponse(
+            {'error': 'Could not assess image. Please select condition manually.'},
+            status=500,
+        )
+
+
+# ─── Title Autocomplete ──────────────────────────────────────────────────────
+
+@login_required
+def title_autocomplete(request):
+    q = request.GET.get('q', '').strip()
+    if len(q) < 1:
+        return JsonResponse([], safe=False)
+
+    titles = (
+        Book.objects.filter(title__icontains=q)
+        .order_by('title')
+        .values_list('title', flat=True)
+        .distinct()[:10]
+    )
+    return JsonResponse(list(titles), safe=False)
+
+
+# ─── Analytics Dashboard ─────────────────────────────────────────────────────
+
+@login_required
+def user_analytics(request):
+    """Personal analytics dashboard — all stats computed server-side."""
+    import json
+    from django.db.models import Count, Sum
+    from django.db.models.functions import TruncMonth
+    from django.conf import settings as _settings
+    from catalog.utils.location import get_nearby_books
+
+    user = request.user
+
+    # ── Section 1: Library Stats ──────────────────────────────────────────────
+    total_listed = BookInstance.objects.filter(user=user).count()
+
+    currently_available = BookInstance.objects.filter(user=user, status='a').count()
+
+    books_with_pending = (
+        BookInstance.objects
+        .filter(user=user, status='a', swap_requests__status='pending')
+        .distinct()
+        .count()
+    )
+
+    popular_books = (
+        BookInstance.objects
+        .filter(user=user)
+        .annotate(req_count=Count('swap_requests'))
+        .filter(req_count__gte=2)
+        .count()
+    )
+
+    in_transit = SwapRequest.objects.filter(
+        book_instance__user=user, status='accepted'
+    ).count()
+
+    swapped_out = SwapRequest.objects.filter(
+        book_instance__user=user, status='completed'
+    ).count()
+
+    books_received = SwapRequest.objects.filter(
+        requester=user, status='completed'
+    ).count()
+
+    total_credits_earned = (
+        CreditTransaction.objects
+        .filter(user=user, amount__gt=0)
+        .aggregate(total=Sum('amount'))['total'] or 0
+    )
+    current_balance = user.profile.credit_balance
+
+    # ── Section 2: Swap Activity ──────────────────────────────────────────────
+    total_sent    = SwapRequest.objects.filter(requester=user).count()
+    pending_sent  = SwapRequest.objects.filter(requester=user, status='pending').count()
+    accepted_sent = SwapRequest.objects.filter(requester=user, status='accepted').count()
+    completed_sent = SwapRequest.objects.filter(requester=user, status='completed').count()
+    declined_sent  = SwapRequest.objects.filter(requester=user, status='rejected').count()
+
+    acceptance_rate = (
+        round(completed_sent / total_sent * 100, 1) if total_sent > 0 else 0
+    )
+
+    i_accepted = SwapRequest.objects.filter(
+        book_instance__user=user, status__in=['accepted', 'completed']
+    ).count()
+    i_completed = SwapRequest.objects.filter(
+        book_instance__user=user, status='completed'
+    ).count()
+    fulfillment_rate = round(i_completed / i_accepted * 100, 1) if i_accepted > 0 else 0
+
+    # ── Section 3: Nearby Books ───────────────────────────────────────────────
+    radius_miles     = getattr(_settings, 'NEARBY_BOOKS_RADIUS_MILES', 50)
+    nearby_total     = 0
+    nearby_by_condition = {}
+    nearby_top_genres   = []
+    has_location        = False
+    try:
+        nearby_result = get_nearby_books(user, radius_miles=radius_miles)
+        if nearby_result is not None:
+            has_location = True
+            nearby_total = len(nearby_result)
+            cond_map     = dict(BookInstance.BOOK_CONDITION)
+            cond_counts  = {}
+            genre_counts = {}
+            for item in nearby_result:
+                label = cond_map.get(item['copy'].condition, item['copy'].condition)
+                cond_counts[label] = cond_counts.get(label, 0) + 1
+                for g in item['copy'].book.genre.all():
+                    genre_counts[g.name] = genre_counts.get(g.name, 0) + 1
+            nearby_by_condition = cond_counts
+            nearby_top_genres = sorted(
+                genre_counts.items(), key=lambda x: x[1], reverse=True
+            )[:3]
+    except Exception:
+        pass
+
+    # ── Section 4: Reading History + Chart ───────────────────────────────────
+    reading_history = (
+        SwapRequest.objects
+        .filter(requester=user, status='completed')
+        .select_related('book_instance__book__author', 'book_instance')
+        .order_by('-created_at')
+    )
+
+    now = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    chart_months = []
+    for i in range(11, -1, -1):
+        month = now.month - i
+        year  = now.year
+        while month <= 0:
+            month += 12
+            year  -= 1
+        chart_months.append(now.replace(year=year, month=month))
+
+    twelve_months_ago = chart_months[0]
+    monthly_qs = (
+        SwapRequest.objects
+        .filter(requester=user, status='completed', created_at__gte=twelve_months_ago)
+        .annotate(month=TruncMonth('created_at'))
+        .values('month')
+        .annotate(count=Count('id'))
+        .order_by('month')
+    )
+    monthly_map    = {item['month'].strftime('%Y-%m'): item['count'] for item in monthly_qs}
+    chart_labels   = json.dumps([m.strftime('%b %Y') for m in chart_months])
+    chart_data_list = [monthly_map.get(m.strftime('%Y-%m'), 0) for m in chart_months]
+    chart_data_vals = json.dumps(chart_data_list)
+    current_month_idx = len(chart_months) - 1
+
+    # Reading stats strip
+    current_year = timezone.now().year
+    books_read_this_year = SwapRequest.objects.filter(
+        requester=user, status='completed', created_at__year=current_year
+    ).count()
+
+    most_active_month_name = None
+    if any(v > 0 for v in chart_data_list):
+        peak_idx = chart_data_list.index(max(chart_data_list))
+        most_active_month_name = chart_months[peak_idx].strftime('%B %Y')
+
+    streak = longest_streak = 0
+    for cnt in chart_data_list:
+        if cnt > 0:
+            streak += 1
+            longest_streak = max(longest_streak, streak)
+        else:
+            streak = 0
+
+    reading_history_recent = list(reading_history[:3])
+
+    # ── New context for redesigned template ──────────────────────────────────
+    total_swaps_completed = swapped_out + books_received
+
+    most_wanted_qs = (
+        BookInstance.objects
+        .filter(user=user, status='a')
+        .annotate(req_count=Count('swap_requests'))
+        .filter(req_count__gt=0)
+        .select_related('book')
+        .order_by('-req_count')
+        .first()
+    )
+    most_wanted_title = most_wanted_qs.book.title if most_wanted_qs else None
+    most_wanted_count = most_wanted_qs.req_count if most_wanted_qs else 0
+
+    hot_books = list(
+        BookInstance.objects
+        .filter(user=user)
+        .annotate(req_count=Count('swap_requests'))
+        .filter(req_count__gte=2)
+        .select_related('book')
+        .order_by('-req_count')
+        .values('book__title', 'req_count')[:5]
+    )
+
+    available_clean = max(0, currently_available - books_with_pending - in_transit)
+    donut_data = json.dumps([completed_sent, pending_sent, accepted_sent, declined_sent])
+
+    # ── Section 5: Demand Insights ────────────────────────────────────────────
+    demand_listings = (
+        BookInstance.objects
+        .filter(user=user, status='a')
+        .annotate(request_count=Count('swap_requests'))
+        .select_related('book__author')
+        .order_by('-request_count')
+    )
+
+    return render(request, 'catalog/analytics.html', {
+        # Section 1
+        'total_listed':         total_listed,
+        'currently_available':  currently_available,
+        'books_with_pending':   books_with_pending,
+        'popular_books':        popular_books,
+        'in_transit':           in_transit,
+        'swapped_out':          swapped_out,
+        'books_received':       books_received,
+        'books_read':           books_received,
+        'total_credits_earned': total_credits_earned,
+        'current_balance':      current_balance,
+        # Section 2
+        'total_sent':       total_sent,
+        'pending_sent':     pending_sent,
+        'accepted_sent':    accepted_sent,
+        'completed_sent':   completed_sent,
+        'declined_sent':    declined_sent,
+        'acceptance_rate':  acceptance_rate,
+        'fulfillment_rate': fulfillment_rate,
+        # Section 3
+        'nearby_total':         nearby_total,
+        'nearby_by_condition':  nearby_by_condition,
+        'nearby_top_genres':    nearby_top_genres,
+        'radius_miles':         radius_miles,
+        'has_location':         has_location,
+        # Section 4
+        'reading_history':         reading_history,
+        'reading_history_recent':  reading_history_recent,
+        'chart_labels':            chart_labels,
+        'chart_data_vals':         chart_data_vals,
+        'current_month_idx':       current_month_idx,
+        'books_read_this_year':    books_read_this_year,
+        'most_active_month_name':  most_active_month_name,
+        'longest_streak':          longest_streak,
+        # Section 5
+        'demand_listings': demand_listings,
+        # Hero + Section 2 extras
+        'total_swaps_completed': total_swaps_completed,
+        'most_wanted_title':     most_wanted_title,
+        'most_wanted_count':     most_wanted_count,
+        'hot_books':             hot_books,
+        'available_clean':       available_clean,
+        'donut_data':            donut_data,
+    })
+
+
+# ─── Book Recommendations ────────────────────────────────────────────────────
+
+@login_required
+def book_recommendations(request, book_id):
+    """Return a JSON list of recommended books similar to the given book."""
+    from django.conf import settings as _settings
+    from catalog.ml.recommender import get_engine
+
+    book = get_object_or_404(Book, pk=book_id)
+    n = getattr(_settings, 'RECOMMENDATION_COUNT', 5)
+
+    try:
+        recs = get_engine().get_recommendations(book, request.user, n=n)
+    except Exception:
+        recs = []
+
+    data = [
+        {
+            'id': rec.pk,
+            'title': rec.title,
+            'author': str(rec.author) if rec.author else '',
+            'cover': rec.cover_url or '',
+            'url': rec.get_absolute_url(),
+        }
+        for rec in recs
+    ]
+    return JsonResponse({'recommendations': data})
+
+
+# ─── Author Autocomplete ──────────────────────────────────────────────────────
+
+@login_required
+def author_autocomplete(request):
+    q = request.GET.get('q', '').strip()
+    if len(q) < 1:
+        return JsonResponse([], safe=False)
+
+    from django.db.models.functions import Concat
+    from django.db.models import Value as V
+
+    authors = (
+        Author.objects.annotate(
+            full_name=Concat('first_name', V(' '), 'last_name'),
+        )
+        .filter(
+            Q(first_name__icontains=q)
+            | Q(last_name__icontains=q)
+            | Q(full_name__icontains=q)
+        )
+        .order_by('last_name', 'first_name')[:10]
+    )
+
+    data = [
+        {'name': f'{a.first_name} {a.last_name}'.strip()}
+        for a in authors
+    ]
+    return JsonResponse(data, safe=False)
