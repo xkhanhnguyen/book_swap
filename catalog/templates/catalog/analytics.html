@@ -6,8 +6,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-/* ── Page base ── */
-body { background: #faf8f5; }
+/* ── Base ── */
 *, *::before, *::after { box-sizing: border-box; }
 
 .an-wrap {
@@ -15,7 +14,6 @@ body { background: #faf8f5; }
   margin: 0 auto;
   padding: 2rem 1rem;
   font-family: 'Nunito', sans-serif;
-  color: #3d3530;
 }
 
 /* ── Section pill labels ── */
@@ -39,7 +37,7 @@ body { background: #faf8f5; }
   font-family: 'DM Serif Display', serif;
   font-size: 1.25rem;
   font-weight: 400;
-  color: #3d3530;
+  color: var(--text);
   margin: 0 0 1rem;
 }
 
@@ -48,7 +46,7 @@ body { background: #faf8f5; }
   text-align: center;
   font-size: 0.55rem;
   letter-spacing: 0.3em;
-  color: #8c7b75;
+  color: var(--text-muted);
   opacity: 0.5;
   margin: 1.75rem 0;
 }
@@ -58,8 +56,8 @@ body { background: #faf8f5; }
 
 /* ── Cards ── */
 .an-card {
-  background: #ffffff;
-  border: 0.5px solid #ede8e3;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
   border-radius: 16px;
   padding: 1.25rem 1.5rem;
   margin-bottom: 12px;
@@ -67,12 +65,11 @@ body { background: #faf8f5; }
 
 /* ── Hero strip ── */
 .hero-strip {
-  background: #ffffff;
-  border: 0.5px solid #ede8e3;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
   border-top: 3px solid #e8a598;
   border-radius: 16px;
   overflow: hidden;
-  margin-bottom: 0;
 }
 .hero-stats-row {
   display: grid;
@@ -81,7 +78,7 @@ body { background: #faf8f5; }
 .hero-stat {
   text-align: center;
   padding: 1.75rem 1rem;
-  border-right: 0.5px solid #ede8e3;
+  border-right: 0.5px solid var(--border);
 }
 .hero-stat:last-child { border-right: none; }
 .hero-num {
@@ -98,15 +95,15 @@ body { background: #faf8f5; }
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #8c7b75;
+  color: var(--text-muted);
 }
 .hero-msg {
-  border-top: 0.5px solid #ede8e3;
+  border-top: 0.5px solid var(--border);
   padding: 0.75rem 1.5rem;
   font-family: 'Nunito', sans-serif;
   font-size: 0.85rem;
   font-style: italic;
-  color: #8c7b75;
+  color: var(--text-muted);
   text-align: center;
 }
 
@@ -116,7 +113,7 @@ body { background: #faf8f5; }
   border-radius: 50px;
   display: flex;
   overflow: hidden;
-  background: #ede8e3;
+  background: var(--border);
 }
 .sbar-seg { height: 100%; transition: width 0.4s; }
 
@@ -131,7 +128,7 @@ body { background: #faf8f5; }
   align-items: center;
   gap: 5px;
   font-size: 0.72rem;
-  color: #8c7b75;
+  color: var(--text-muted);
 }
 .sbar-dot {
   width: 8px;
@@ -148,8 +145,8 @@ body { background: #faf8f5; }
   margin-bottom: 12px;
 }
 .stat-mini {
-  background: #ffffff;
-  border: 0.5px solid #ede8e3;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
   border-top: 3px solid #e8a598;
   border-radius: 14px;
   padding: 1rem 1.1rem;
@@ -163,7 +160,7 @@ body { background: #faf8f5; }
 }
 .stat-mini-lbl {
   font-size: 0.72rem;
-  color: #8c7b75;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -173,10 +170,10 @@ body { background: #faf8f5; }
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 0.75rem;
-  background: #faf8f5;
+  background: var(--surface2);
   border-radius: 10px;
   font-size: 0.8rem;
-  color: #3d3530;
+  color: var(--text-secondary);
   margin-bottom: 5px;
 }
 .wanted-pill {
@@ -197,12 +194,12 @@ body { background: #faf8f5; }
   justify-content: space-between;
   align-items: center;
   padding: 0.6rem 0;
-  border-bottom: 0.5px solid #ede8e3;
+  border-bottom: 0.5px solid var(--border);
   font-size: 0.82rem;
 }
 .swap-row:last-child { border-bottom: none; }
-.swap-row-lbl { color: #3d3530; }
-.swap-row-val { font-weight: 700; color: #3d3530; }
+.swap-row-lbl { color: var(--text-secondary); }
+.swap-row-val { font-weight: 700; color: var(--text); }
 .swap-row-val-sage { font-weight: 700; color: #a8c5b5; }
 
 /* ── Rate rows ── */
@@ -211,7 +208,7 @@ body { background: #faf8f5; }
   justify-content: space-between;
   align-items: center;
   padding: 0.6rem 0;
-  border-bottom: 0.5px solid #ede8e3;
+  border-bottom: 0.5px solid var(--border);
   font-size: 0.82rem;
   gap: 1rem;
 }
@@ -228,12 +225,12 @@ body { background: #faf8f5; }
 .rate-pill-sage   { background: #d4e8e0; color: #3d7a65; }
 .rate-pill-butter { background: #f7edce; color: #8a6a1a; }
 .rate-pill-coral  { background: #f9ddd9; color: #b5584a; }
-.rate-pill-gray   { background: #ede8e3; color: #8c7b75; }
+.rate-pill-gray   { background: var(--surface2); color: var(--text-muted); }
 
 /* ── Reading journey headline ── */
 .headline-card {
-  background: #ffffff;
-  border: 0.5px solid #ede8e3;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
   border-radius: 16px;
   padding: 1.25rem 1.5rem;
   margin-bottom: 12px;
@@ -241,12 +238,12 @@ body { background: #faf8f5; }
 .headline-book-count {
   font-family: 'DM Serif Display', serif;
   font-size: 1.1rem;
-  color: #3d3530;
+  color: var(--text);
   margin-bottom: 4px;
 }
 .headline-sub {
   font-size: 0.82rem;
-  color: #8c7b75;
+  color: var(--text-muted);
 }
 
 /* ── Reading cards ── */
@@ -257,8 +254,8 @@ body { background: #faf8f5; }
   margin-bottom: 12px;
 }
 .read-card {
-  background: #ffffff;
-  border: 0.5px solid #ede8e3;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
   border-top: 3px solid #c4b5d4;
   border-radius: 14px;
   padding: 1rem;
@@ -272,7 +269,7 @@ body { background: #faf8f5; }
 .read-cover-placeholder {
   width: 100%;
   height: 80px;
-  background: #e4daf0;
+  background: var(--surface2);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -284,12 +281,12 @@ body { background: #faf8f5; }
   font-weight: 600;
   font-size: 0.85rem;
   margin-top: 0.5rem;
-  color: #3d3530;
+  color: var(--text);
   line-height: 1.3;
 }
 .read-author {
   font-size: 0.75rem;
-  color: #8c7b75;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 .read-pills {
@@ -319,7 +316,7 @@ body { background: #faf8f5; }
 .rstrip {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  background: #faf8f5;
+  background: var(--surface2);
   border-radius: 12px;
   padding: 0.75rem;
   text-align: center;
@@ -327,7 +324,7 @@ body { background: #faf8f5; }
 }
 .rstrip-item {
   font-size: 0.8rem;
-  color: #8c7b75;
+  color: var(--text-muted);
 }
 
 /* ── Nearby section ── */
@@ -345,7 +342,7 @@ body { background: #faf8f5; }
 }
 .nearby-sublabel {
   font-size: 0.8rem;
-  color: #8c7b75;
+  color: var(--text-muted);
   margin-top: 4px;
   margin-bottom: 12px;
 }
@@ -368,7 +365,7 @@ body { background: #faf8f5; }
 .nearby-cta {
   display: inline-block;
   background: #e8a598;
-  color: #ffffff;
+  color: #fff;
   font-family: 'Nunito', sans-serif;
   font-weight: 700;
   font-size: 0.82rem;
@@ -380,19 +377,19 @@ body { background: #faf8f5; }
   text-decoration: none;
   transition: background 0.2s;
 }
-.nearby-cta:hover { background: #d4897a; color: #ffffff; }
+.nearby-cta:hover { background: #d4897a; color: #fff; }
 
 .cond-row {
   display: flex;
   justify-content: space-between;
   font-size: 0.78rem;
-  color: #8c7b75;
+  color: var(--text-muted);
   margin-bottom: 6px;
 }
 .cond-count {
   font-family: 'Nunito', sans-serif;
   font-weight: 700;
-  color: #3d3530;
+  color: var(--text);
 }
 
 /* ── Demand accordion ── */
@@ -419,7 +416,7 @@ body { background: #faf8f5; }
   justify-content: space-between;
   align-items: center;
   padding: 0.65rem 0;
-  border-bottom: 0.5px solid #ede8e3;
+  border-bottom: 0.5px solid var(--border);
   font-size: 0.82rem;
   gap: 10px;
 }
@@ -430,12 +427,12 @@ body { background: #faf8f5; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #3d3530;
+  color: var(--text);
 }
 .dbar-wrap {
   width: 80px;
   height: 5px;
-  background: #ede8e3;
+  background: var(--border);
   border-radius: 50px;
   overflow: hidden;
   flex-shrink: 0;
@@ -457,17 +454,17 @@ body { background: #faf8f5; }
 /* ── Empty state ── */
 .empty {
   font-size: 0.85rem;
-  color: #8c7b75;
+  color: var(--text-muted);
   text-align: center;
   padding: 1.5rem;
-  border: 1.5px dashed #ede8e3;
+  border: 1.5px dashed var(--border);
   border-radius: 14px;
 }
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .hero-stats-row         { grid-template-columns: 1fr; }
-  .hero-stat              { border-right: none; border-bottom: 0.5px solid #ede8e3; }
+  .hero-stat              { border-right: none; border-bottom: 0.5px solid var(--border); }
   .hero-stat:last-child   { border-bottom: none; }
   .stat-grid              { grid-template-columns: 1fr; }
   .nearby-two-col         { grid-template-columns: 1fr; }
@@ -492,15 +489,13 @@ body { background: #faf8f5; }
 <!-- Page header -->
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem">
   <div>
-    <h1 style="font-family:'DM Serif Display',serif; font-weight:400; font-size:1.9rem; color:#3d3530; margin:0 0 4px">Analytics</h1>
-    <p style="font-size:0.82rem; color:#8c7b75; margin:0">Your personal reading journey</p>
+    <h1 style="font-family:'DM Serif Display',serif; font-weight:400; font-size:1.9rem; color:var(--text); margin:0 0 4px">Analytics</h1>
+    <p style="font-size:0.82rem; color:var(--text-muted); margin:0">Your personal reading journey</p>
   </div>
-  <a href="{% url 'my-swaps' %}" style="font-family:'Nunito',sans-serif; font-size:0.78rem; font-weight:700; color:#8c7b75; border:0.5px solid #ede8e3; background:#ffffff; padding:0.45rem 1.1rem; border-radius:50px; text-decoration:none; white-space:nowrap">My Swaps</a>
+  <a href="{% url 'my-swaps' %}" style="font-family:'Nunito',sans-serif; font-size:0.78rem; font-weight:700; color:var(--text-secondary); border:0.5px solid var(--border); background:var(--surface); padding:0.45rem 1.1rem; border-radius:50px; text-decoration:none; white-space:nowrap">My Swaps</a>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     S1 · HERO
-══════════════════════════════════════════════════════════ -->
+<!-- ══ S1 · HERO ══ -->
 <div class="an-section">
   <div class="hero-strip">
     <div class="hero-stats-row">
@@ -531,9 +526,7 @@ body { background: #faf8f5; }
 
 <div class="sec-divider">· · ·</div>
 
-<!-- ══════════════════════════════════════════════════════════
-     S2 · MY BOOKS
-══════════════════════════════════════════════════════════ -->
+<!-- ══ S2 · MY BOOKS ══ -->
 <div class="an-section">
   <span class="sec-pill sec-pill-coral">library</span>
   <h2 class="sec-title">My Books</h2>
@@ -542,7 +535,7 @@ body { background: #faf8f5; }
 
   <!-- Status breakdown bar -->
   <div class="an-card">
-    <div style="font-size:0.72rem; color:#8c7b75; margin-bottom:6px">Book status breakdown</div>
+    <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:6px">Book status breakdown</div>
     <div class="status-bar-wrap">
       <div class="sbar-seg" style="width:{% widthratio available_clean total_listed 100 %}%; background:#e8a598;"></div>
       <div class="sbar-seg" style="width:{% widthratio books_with_pending total_listed 100 %}%; background:#f0d9a0;"></div>
@@ -575,7 +568,7 @@ body { background: #faf8f5; }
 
   <!-- Most wanted -->
   <div class="an-card">
-    <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:#8c7b75; margin-bottom:10px">Most Wanted</div>
+    <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); margin-bottom:10px">Most Wanted</div>
     {% if hot_books %}
       {% for hb in hot_books %}
       <div class="wanted-row">
@@ -584,7 +577,7 @@ body { background: #faf8f5; }
       </div>
       {% endfor %}
     {% else %}
-      <p style="color:#8c7b75; font-size:0.82rem; margin:0">No standout requests yet.</p>
+      <p style="color:var(--text-muted); font-size:0.82rem; margin:0">No standout requests yet.</p>
     {% endif %}
   </div>
 
@@ -595,9 +588,7 @@ body { background: #faf8f5; }
 
 <div class="sec-divider">· · ·</div>
 
-<!-- ══════════════════════════════════════════════════════════
-     S3 · SWAP ACTIVITY
-══════════════════════════════════════════════════════════ -->
+<!-- ══ S3 · SWAP ACTIVITY ══ -->
 <div class="an-section">
   <span class="sec-pill sec-pill-sage">activity</span>
   <h2 class="sec-title">Swap Activity</h2>
@@ -629,7 +620,7 @@ body { background: #faf8f5; }
 
   <div class="an-card">
     <div class="rate-row">
-      <span style="color:#3d3530">Success rate as requester</span>
+      <span style="color:var(--text-secondary)">Success rate as requester</span>
       {% if acceptance_rate >= 80 %}
         <span class="rate-pill rate-pill-sage">{{ acceptance_rate }}%&nbsp;&nbsp;Doing great</span>
       {% elif acceptance_rate >= 50 %}
@@ -639,7 +630,7 @@ body { background: #faf8f5; }
       {% endif %}
     </div>
     <div class="rate-row">
-      <span style="color:#3d3530">Fulfillment rate as sender</span>
+      <span style="color:var(--text-secondary)">Fulfillment rate as sender</span>
       {% if fulfillment_rate >= 80 %}
         <span class="rate-pill rate-pill-sage">{{ fulfillment_rate }}%&nbsp;&nbsp;Doing great</span>
       {% elif fulfillment_rate >= 50 %}
@@ -659,9 +650,7 @@ body { background: #faf8f5; }
 
 <div class="sec-divider">· · ·</div>
 
-<!-- ══════════════════════════════════════════════════════════
-     S4 · READING JOURNEY
-══════════════════════════════════════════════════════════ -->
+<!-- ══ S4 · READING JOURNEY ══ -->
 <div class="an-section">
   <span class="sec-pill sec-pill-lavender">journey</span>
   <h2 class="sec-title">Reading Journey</h2>
@@ -701,9 +690,9 @@ body { background: #faf8f5; }
 
   <!-- Reading stats strip -->
   <div class="rstrip">
-    <div class="rstrip-item">📖 <strong style="color:#3d3530">{{ books_read_this_year }}</strong> books this year</div>
-    <div class="rstrip-item">📅 Best month: <strong style="color:#3d3530">{% if most_active_month_name %}{{ most_active_month_name }}{% else %}—{% endif %}</strong></div>
-    <div class="rstrip-item">🌱 <strong style="color:#3d3530">{{ longest_streak }}</strong> month streak</div>
+    <div class="rstrip-item">📖 <strong style="color:var(--text)">{{ books_read_this_year }}</strong> books this year</div>
+    <div class="rstrip-item">📅 Best month: <strong style="color:var(--text)">{% if most_active_month_name %}{{ most_active_month_name }}{% else %}—{% endif %}</strong></div>
+    <div class="rstrip-item">🌱 <strong style="color:var(--text)">{{ longest_streak }}</strong> month streak</div>
   </div>
 
   {% else %}
@@ -713,9 +702,7 @@ body { background: #faf8f5; }
 
 <div class="sec-divider">· · ·</div>
 
-<!-- ══════════════════════════════════════════════════════════
-     S5 · NEAR ME
-══════════════════════════════════════════════════════════ -->
+<!-- ══ S5 · NEAR ME ══ -->
 <div class="an-section">
   <span class="sec-pill sec-pill-butter">nearby</span>
   <h2 class="sec-title">Books Near You</h2>
@@ -758,9 +745,7 @@ body { background: #faf8f5; }
 
 <div class="sec-divider">· · ·</div>
 
-<!-- ══════════════════════════════════════════════════════════
-     S6 · DEMAND INSIGHTS
-══════════════════════════════════════════════════════════ -->
+<!-- ══ S6 · DEMAND INSIGHTS ══ -->
 <div class="an-section">
   <span class="sec-pill sec-pill-sage">insights</span>
   <h2 class="sec-title">Demand Insights</h2>
@@ -776,11 +761,11 @@ body { background: #faf8f5; }
         <div class="dbar-wrap">
           <div class="dbar-fill" style="
             width:{% if copy.request_count == 0 %}0{% elif copy.request_count == 1 %}33{% elif copy.request_count == 2 %}66{% else %}100{% endif %}%;
-            background:{% if copy.request_count == 0 %}#8c7b75{% elif copy.request_count == 1 %}#b8d4e8{% elif copy.request_count == 2 %}#e8a598{% else %}#c97060{% endif %};
+            background:{% if copy.request_count == 0 %}var(--text-muted){% elif copy.request_count == 1 %}#b8d4e8{% elif copy.request_count == 2 %}#e8a598{% else %}#c97060{% endif %};
           "></div>
         </div>
         {% if copy.request_count == 0 %}
-          <span class="demand-pill" style="background:#ede8e3; color:#8c7b75">Waiting</span>
+          <span class="demand-pill" style="background:var(--surface2); color:var(--text-muted)">Waiting</span>
         {% elif copy.request_count == 1 %}
           <span class="demand-pill" style="background:#daeaf7; color:#2d6fa0">Interested</span>
         {% elif copy.request_count == 2 %}
@@ -799,16 +784,13 @@ body { background: #faf8f5; }
 
 </div><!-- /.an-wrap -->
 
-<!-- ══════════════════════════════════════════════════════════
-     CHART.JS INIT
-══════════════════════════════════════════════════════════ -->
+<!-- ══ CHART.JS INIT ══ -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   Chart.defaults.font.family = 'Nunito';
-  Chart.defaults.color = '#8c7b75';
+  Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#666';
   Chart.defaults.plugins.legend.display = false;
 
-  /* ── 12-month reading bar chart ── */
   {% if books_read > 0 %}
   (function () {
     var el = document.getElementById('readingChart');
@@ -835,7 +817,7 @@ document.addEventListener('DOMContentLoaded', function () {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#3d3530',
+            backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#1a1a1a',
             cornerRadius: 8,
             padding: 10,
             titleFont: { family: 'Nunito' },
@@ -852,7 +834,6 @@ document.addEventListener('DOMContentLoaded', function () {
             grid:   { display: false },
             border: { display: false },
             ticks: {
-              color: '#8c7b75',
               font: { size: window.innerWidth < 480 ? 9 : 11 }
             }
           },

@@ -70,6 +70,9 @@ urlpatterns = [
     # Feature 7: Swap history
     path('swap-history/', views.swap_history, name='swap-history'),
 
+    # Me tab
+    path('me/', views.me, name='me'),
+
     # Analytics dashboard
     path('analytics/', views.user_analytics, name='user-analytics'),
 

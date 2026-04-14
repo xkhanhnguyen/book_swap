@@ -1,55 +1,289 @@
 {% load static %}
-<nav class="navbar">
-  <div class="navbar-inner">
-    <a href="{% url 'index' %}" class="navbar-brand">BookSwap</a>
+{% with r=request.resolver_match.url_name|default:"" %}
 
-    <div class="navbar-links">
-      <a href="{% url 'books' %}">Books</a>
-      <a href="{% url 'authors' %}">Authors</a>
-      <a href="{% url 'request-board' %}">Request Board</a>
+<style>
+/* ── Nav reset ── */
+.top-nav *, .top-nav *::before, .top-nav *::after,
+.bottom-nav *, .bottom-nav *::before, .bottom-nav *::after { box-sizing: border-box; }
+
+/* ════════════════════════════════════════════
+   DESKTOP — sticky top nav
+════════════════════════════════════════════ */
+.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  height: 56px;
+}
+.top-nav-inner {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 56px;
+}
+
+/* Logo */
+.nav-logo {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: var(--text);
+  text-decoration: none;
+  justify-self: start;
+  white-space: nowrap;
+}
+.nav-logo:hover { color: var(--text); }
+
+/* Center links */
+.nav-links {
+  display: flex;
+  align-items: center;
+}
+.nav-link {
+  font-family: 'Nunito', Inter, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  padding: 0 14px;
+  height: 56px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.nav-link:hover { color: #e8a598; }
+.nav-link.active { color: #e8a598; border-bottom-color: #e8a598; }
+
+/* Dot badge for desktop Swaps link */
+.nav-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  background: #e8a598;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Right side */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-self: end;
+}
+.nav-credit {
+  font-family: 'Nunito', Inter, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #a8c5b5;
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 4px 12px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nav-credit:hover { color: #a8c5b5; border-color: #a8c5b5; }
+.nav-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface2);
+  color: var(--accent);
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.nav-avatar:hover { color: var(--accent); }
+
+/* ════════════════════════════════════════════
+   MOBILE — fixed bottom tab bar
+════════════════════════════════════════════ */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  z-index: 200;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.bottom-nav-inner {
+  display: flex;
+  height: 60px;
+}
+.bottom-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-family: 'Nunito', Inter, sans-serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: color 0.15s;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.bottom-tab:hover, .bottom-tab.active { color: #e8a598; }
+.tab-icon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+/* Circular badge on Swaps icon */
+.tab-badge {
+  position: absolute;
+  top: -4px;
+  right: -7px;
+  background: #e8a598;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  border-radius: 50%;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+}
+
+/* ════════════════════════════════════════════
+   RESPONSIVE — which nav to show
+════════════════════════════════════════════ */
+.top-nav   { display: block; }
+.bottom-nav { display: none; }
+
+@media (max-width: 640px) {
+  .top-nav    { display: none; }
+  .bottom-nav { display: block; }
+}
+</style>
+
+<!-- ══════════════════ DESKTOP TOP NAV ══════════════════ -->
+<nav class="top-nav">
+  <div class="top-nav-inner">
+
+    <a href="{% url 'index' %}" class="nav-logo">BookSwap</a>
+
+    {% if user.is_authenticated %}
+    <div class="nav-links">
+
+      <a href="{% url 'books' %}"
+         class="nav-link{% if r == 'books' or r == 'book-detail' or r == 'search-results' or r == 'index' or r == 'genres' or r == 'genre-detail' or r == 'authors' or r == 'author-detail' or r == 'request-board' %} active{% endif %}">
+        Discover
+      </a>
+
+      <a href="{% url 'my-swapped-book' %}"
+         class="nav-link{% if r == 'my-swapped-book' or r == 'wishlist' or r == 'book-create' or r == 'book-update' or r == 'add-copy' or r == 'my-shelf' or r == 'add-to-shelf' or r == 'remove-from-shelf' or r == 'write-review' %} active{% endif %}">
+        My Shelf
+      </a>
+
+      <a href="{% url 'my-swaps' %}"
+         class="nav-link{% if r == 'my-swaps' or r == 'swap-detail' or r == 'swap-history' or r == 'rate-swap' or r == 'upload-receipt' or r == 'open-dispute' or r == 'resolve-dispute' or r == 'generate-label' or r == 'download-label' %} active{% endif %}">
+        Swaps
+        {% if pending_swaps_count %}<span class="nav-dot"></span>{% endif %}
+      </a>
+
+      <a href="{% url 'me' %}"
+         class="nav-link{% if r == 'me' or r == 'user-analytics' or r == 'notifications' or r == 'account-settings' %} active{% endif %}">
+        Me
+      </a>
+
     </div>
+    {% else %}
+    <div></div>
+    {% endif %}
 
-    <div class="navbar-right">
-      <form method="get" class="search-form" action="{% url 'search-results' %}">
-        <input type="search" name="search_query" placeholder="Search books…" />
-        <button type="submit"><i class="fa fa-search" style="font-size:13px"></i></button>
-      </form>
-
+    <div class="nav-right">
       {% if user.is_authenticated %}
-      <a href="{% url 'my-swaps' %}" style="font-size:13px; color:var(--accent); padding:6px 10px; border:1px solid rgba(200,169,110,0.3); border-radius:var(--radius)">
-        {{ user.profile.credit_balance }} cr
-      </a>
-      {% if unread_notifications_count %}
-      <a href="{% url 'notifications' %}" style="position:relative; font-size:13px; padding:6px 10px; color:var(--text-secondary)">
-        <i class="fa fa-bell"></i>
-        <span style="position:absolute; top:2px; right:2px; background:#e05c5c; color:#fff; border-radius:50%; width:16px; height:16px; font-size:10px; display:flex; align-items:center; justify-content:center; line-height:1">{{ unread_notifications_count }}</span>
-      </a>
-      {% endif %}
-      <div class="dropdown">
-        <button class="dropdown-toggle" onclick="var d=this.closest('.dropdown');d.classList.toggle('open');event.stopPropagation()">{{ user.get_username }} <i class="fa fa-chevron-down" style="font-size:10px"></i></button>
-        <div class="dropdown-menu">
-          <a href="{% url 'my-swaps' %}">My Swaps</a>
-          <a href="{% url 'swap-history' %}">Swap History</a>
-          <a href="{% url 'my-swapped-book' %}">My Books</a>
-          <a href="{% url 'my-shelf' %}">My Shelf</a>
-          <a href="{% url 'wishlist' %}">Wishlist</a>
-          {% if user.is_staff %}
-          <div class="dropdown-divider"></div>
-          <a href="{% url 'admin-disputes' %}">Disputes</a>
-          {% endif %}
-          <div class="dropdown-divider"></div>
-          <a href="{% url 'account-settings' %}">Settings</a>
-          <div class="dropdown-divider"></div>
-          <form method="post" action="{% url 'logout' %}" style="margin:0">
-            {% csrf_token %}
-            <button type="submit" style="background:none;border:none;width:100%;text-align:left;padding:10px 16px;font-size:14px;color:var(--text-secondary);cursor:pointer;font-family:inherit">Sign out</button>
-          </form>
-        </div>
-      </div>
+        <a href="{% url 'me' %}" class="nav-credit">◈ {{ user.profile.credit_balance }} cr</a>
+        <a href="{% url 'me' %}" class="nav-avatar" title="{{ user.get_username }}">{{ user.get_username|slice:":1"|upper }}</a>
       {% else %}
-      <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-secondary btn-sm">Sign in</a>
-      <a href="{% url 'users-register' %}" class="btn btn-primary btn-sm">Sign up</a>
+        <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-secondary btn-sm">Sign in</a>
+        <a href="{% url 'users-register' %}" class="btn btn-primary btn-sm">Sign up</a>
       {% endif %}
     </div>
+
   </div>
 </nav>
+
+<!-- ══════════════════ MOBILE BOTTOM TAB BAR ══════════════════ -->
+{% if user.is_authenticated %}
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+
+    <!-- Discover -->
+    <a href="{% url 'books' %}"
+       class="bottom-tab{% if r == 'books' or r == 'book-detail' or r == 'search-results' or r == 'index' or r == 'genres' or r == 'genre-detail' %} active{% endif %}">
+      <div class="tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </div>
+      Discover
+    </a>
+
+    <!-- My Shelf -->
+    <a href="{% url 'my-swapped-book' %}"
+       class="bottom-tab{% if r == 'my-swapped-book' or r == 'wishlist' or r == 'book-create' or r == 'add-copy' or r == 'my-shelf' %} active{% endif %}">
+      <div class="tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+      </div>
+      My Shelf
+    </a>
+
+    <!-- Swaps (with badge) -->
+    <a href="{% url 'my-swaps' %}"
+       class="bottom-tab{% if r == 'my-swaps' or r == 'swap-detail' or r == 'swap-history' or r == 'rate-swap' or r == 'upload-receipt' or r == 'open-dispute' %} active{% endif %}">
+      <div class="tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+          <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+        </svg>
+        {% if pending_swaps_count %}<span class="tab-badge">{{ pending_swaps_count }}</span>{% endif %}
+      </div>
+      Swaps
+    </a>
+
+    <!-- Me -->
+    <a href="{% url 'me' %}"
+       class="bottom-tab{% if r == 'me' or r == 'user-analytics' or r == 'notifications' or r == 'account-settings' %} active{% endif %}">
+      <div class="tab-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      Me
+    </a>
+
+  </div>
+</nav>
+{% endif %}
+
+{% endwith %}

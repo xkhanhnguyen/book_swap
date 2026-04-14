@@ -211,6 +211,14 @@ class BooksByUserListView(LoginRequiredMixin, generic.ListView):
             .order_by('-date_posted')
         )
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['wishlist_items'] = Wishlist.objects.filter(
+            user=self.request.user
+        ).order_by('-created_at')
+        context['shelf_tab'] = self.request.GET.get('tab', 'books')
+        return context
+
 
 class BooksByAllListView(LoginRequiredMixin, generic.ListView):
     model = BookInstance
@@ -267,6 +275,9 @@ class BookCreateView(LoginRequiredMixin, CreateView):
         book.save()
         form.save_m2m()
         messages.success(self.request, 'Your book-swap has been created successfully.')
+        next_url = self.request.POST.get('next') or self.request.GET.get('next')
+        if next_url and next_url.startswith('/'):
+            return redirect(next_url)
         return redirect(book.get_absolute_url())
 
 
@@ -883,6 +894,9 @@ def wishlist(request):
                 user=request.user, title=title, author=author, isbn=isbn
             )
             messages.success(request, f'"{title}" added to your wishlist.')
+            next_url = request.POST.get('next', '')
+            if next_url and next_url.startswith('/'):
+                return redirect(next_url)
             return redirect('wishlist')
         else:
             messages.error(request, 'Please enter a book title.')
@@ -895,6 +909,9 @@ def delete_wishlist(request, pk):
     if request.method == 'POST':
         item.delete()
         messages.success(request, 'Wishlist item removed.')
+        next_url = request.POST.get('next', '')
+        if next_url and next_url.startswith('/'):
+            return redirect(next_url)
     return redirect('wishlist')
 
 
@@ -905,6 +922,9 @@ def mark_fulfilled(request, pk):
         item.fulfilled = True
         item.save(update_fields=['fulfilled'])
         messages.success(request, f'"{item.title}" marked as fulfilled.')
+        next_url = request.POST.get('next', '')
+        if next_url and next_url.startswith('/'):
+            return redirect(next_url)
     return redirect('wishlist')
 
 
@@ -1207,6 +1227,12 @@ def title_autocomplete(request):
 
 
 # ─── Analytics Dashboard ─────────────────────────────────────────────────────
+
+@login_required
+def me(request):
+    """Me tab — credit balance, quick links, sign out."""
+    return render(request, 'catalog/me.html', {})
+
 
 @login_required
 def user_analytics(request):

@@ -94,8 +94,9 @@ TEMPLATES = [
                 'social_django.context_processors.backends',
                 'social_django.context_processors.login_redirect',
 
-                # unread notification count
+                # unread notification count + pending swaps badge
                 'catalog.context_processors.notification_count',
+                'catalog.context_processors.pending_swaps_count',
             ],
         },
     },

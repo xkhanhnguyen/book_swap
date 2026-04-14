@@ -1,0 +1,74 @@
+{% extends "base_generic.html" %}
+{% block title %}Me — BookSwap{% endblock %}
+
+{% block content %}
+<div style="max-width:480px; margin:0 auto; padding-top:0.5rem">
+
+  <!-- Credit balance card -->
+  <div style="background:var(--surface); border:0.5px solid var(--border); border-top:3px solid #a8c5b5; border-radius:16px; padding:2rem 1.5rem; text-align:center; margin-bottom:1.25rem">
+    <div style="font-family:'DM Serif Display',Georgia,serif; font-size:3.2rem; color:#a8c5b5; line-height:1; margin-bottom:6px">{{ user.profile.credit_balance }}</div>
+    <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:var(--text-muted)">Credits Available</div>
+    <div style="font-size:0.78rem; color:var(--text-muted); margin-top:6px">1 credit ≈ $3 toward shipping</div>
+  </div>
+
+  <!-- Quick links -->
+  <div style="background:var(--surface); border:0.5px solid var(--border); border-radius:16px; overflow:hidden; margin-bottom:1.25rem">
+
+    <a href="{% url 'my-swaps' %}" style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 1.25rem; border-bottom:0.5px solid var(--border); text-decoration:none; color:var(--text)">
+      <span style="font-size:0.88rem">Swaps
+        {% if pending_swaps_count %}
+        <span style="background:#f9ddd9; color:#b5584a; font-size:0.65rem; font-weight:700; border-radius:50px; padding:2px 8px; margin-left:6px">{{ pending_swaps_count }} pending</span>
+        {% endif %}
+      </span>
+      <span style="color:var(--text-muted); font-size:1rem">›</span>
+    </a>
+
+    <a href="{% url 'user-analytics' %}" style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 1.25rem; border-bottom:0.5px solid var(--border); text-decoration:none; color:var(--text)">
+      <span style="font-size:0.88rem">Analytics</span>
+      <span style="color:var(--text-muted); font-size:1rem">›</span>
+    </a>
+
+    <a href="{% url 'notifications' %}" style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 1.25rem; border-bottom:0.5px solid var(--border); text-decoration:none; color:var(--text)">
+      <span style="font-size:0.88rem">Notifications
+        {% if unread_notifications_count %}
+        <span style="background:#e8a598; color:#fff; font-size:0.65rem; font-weight:700; border-radius:50px; padding:2px 8px; margin-left:6px">{{ unread_notifications_count }} new</span>
+        {% endif %}
+      </span>
+      <span style="color:var(--text-muted); font-size:1rem">›</span>
+    </a>
+
+    <a href="{% url 'account-settings' %}" style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 1.25rem; border-bottom:0.5px solid var(--border); text-decoration:none; color:var(--text)">
+      <span style="font-size:0.88rem">Account Settings</span>
+      <span style="color:var(--text-muted); font-size:1rem">›</span>
+    </a>
+
+    <a href="{% url 'swap-history' %}" style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 1.25rem; text-decoration:none; color:var(--text)">
+      <span style="font-size:0.88rem">Swap History</span>
+      <span style="color:var(--text-muted); font-size:1rem">›</span>
+    </a>
+
+  </div>
+
+  {% if user.is_staff %}
+  <div style="background:var(--surface); border:0.5px solid var(--border); border-radius:16px; overflow:hidden; margin-bottom:1.25rem">
+    <a href="{% url 'admin-disputes' %}" style="display:flex; justify-content:space-between; align-items:center; padding:0.9rem 1.25rem; text-decoration:none; color:var(--text)">
+      <span style="font-size:0.88rem">Admin: Open Disputes</span>
+      <span style="color:var(--text-muted); font-size:1rem">›</span>
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Sign out -->
+  <form method="post" action="{% url 'logout' %}">
+    {% csrf_token %}
+    <button type="submit" style="width:100%; background:var(--surface); border:0.5px solid var(--border); border-radius:16px; padding:0.9rem; font-size:0.88rem; color:#c97060; font-family:'Nunito',inherit; cursor:pointer; text-align:center; transition:background 0.15s">
+      Sign out
+    </button>
+  </form>
+
+  <p style="text-align:center; margin-top:1.25rem; font-size:0.75rem; color:var(--text-muted)">
+    Signed in as <strong style="color:var(--text-secondary)">{{ user.get_username }}</strong>
+  </p>
+
+</div>
+{% endblock %}

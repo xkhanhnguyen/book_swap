@@ -1,37 +1,161 @@
 {% extends "base_generic.html" %}
-{% block title %}My Books — BookSwap{% endblock %}
+{% block title %}My Shelf — BookSwap{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>My Books</h1>
-    <p style="font-size:13px; color:var(--text-muted); margin-top:4px">Copies you've listed for swap</p>
+    <h1>My Shelf</h1>
+    <p style="font-size:13px; color:var(--text-muted); margin-top:4px">Your listed books and wishlist</p>
   </div>
-  <a href="{% url 'books' %}" class="btn btn-primary btn-sm">+ Add a book</a>
+  <a href="{% url 'book-create' %}?next={% url 'my-swapped-book' %}" class="btn btn-primary btn-sm">+ Add a book</a>
 </div>
 
-{% if bookinstance_list %}
-<div style="display:flex; flex-direction:column; gap:1px; background:var(--border); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden">
-  {% for copy in bookinstance_list %}
-  <div style="background:var(--surface); padding:16px 20px; display:flex; align-items:center; gap:16px">
-    <div style="flex:1">
-      <a href="{% url 'book-detail' copy.book.pk %}" style="font-size:15px; font-weight:500; color:var(--text)">{{ copy.book.title }}</a>
-      <div style="font-size:13px; color:var(--text-muted); margin-top:3px; display:flex; gap:12px; flex-wrap:wrap">
-        {% if copy.get_condition_display %}<span>{{ copy.get_condition_display }}</span>{% endif %}
-        {% if copy.get_type_display %}<span>{{ copy.get_type_display }}</span>{% endif %}
-        <span>Listed {{ copy.date_posted }}</span>
+<!-- Tab switcher -->
+<div style="display:flex; gap:0; margin-bottom:24px; border-bottom:1px solid var(--border)">
+  <button id="tab-btn-books" onclick="switchShelfTab('books')"
+    style="background:none; border:none; border-bottom:2px solid transparent; padding:8px 18px; font-size:13px; font-weight:500; color:var(--text-muted); cursor:pointer; font-family:inherit; transition:color 0.15s, border-color 0.15s; margin-bottom:-1px">
+    My Books ({{ bookinstance_list|length }})
+  </button>
+  <button id="tab-btn-wishlist" onclick="switchShelfTab('wishlist')"
+    style="background:none; border:none; border-bottom:2px solid transparent; padding:8px 18px; font-size:13px; font-weight:500; color:var(--text-muted); cursor:pointer; font-family:inherit; transition:color 0.15s, border-color 0.15s; margin-bottom:-1px">
+    Wishlist ({{ wishlist_items|length }})
+  </button>
+</div>
+
+<!-- ── My Books section ── -->
+<div id="section-books">
+  {% if bookinstance_list %}
+  <div style="display:flex; flex-direction:column; gap:1px; background:var(--border); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden">
+    {% for copy in bookinstance_list %}
+    <div style="background:var(--surface); padding:16px 20px; display:flex; align-items:center; gap:16px">
+      <div style="flex:1">
+        <a href="{% url 'book-detail' copy.book.pk %}" style="font-size:15px; font-weight:500; color:var(--text)">{{ copy.book.title }}</a>
+        <div style="font-size:13px; color:var(--text-muted); margin-top:3px; display:flex; gap:12px; flex-wrap:wrap">
+          {% if copy.get_condition_display %}<span>{{ copy.get_condition_display }}</span>{% endif %}
+          {% if copy.get_type_display %}<span>{{ copy.get_type_display }}</span>{% endif %}
+          <span>Listed {{ copy.date_posted }}</span>
+        </div>
       </div>
+      <span class="status-badge {% if copy.status == 'a' %}status-available{% else %}status-unavailable{% endif %}">
+        {{ copy.get_status_display }}
+      </span>
     </div>
-    <span class="status-badge {% if copy.status == 'a' %}status-available{% else %}status-unavailable{% endif %}">
-      {{ copy.get_status_display }}
-    </span>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p>You haven't listed any books yet.</p>
+    <a href="{% url 'book-create' %}?next={% url 'my-swapped-book' %}" class="btn btn-primary">Add your first book</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Wishlist section ── -->
+<div id="section-wishlist" style="display:none">
+
+  <!-- Add form -->
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-body">
+      <h3 style="font-size:14px; margin-bottom:14px">Add a book to wishlist</h3>
+      <form method="post" action="{% url 'wishlist' %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'my-swapped-book' %}?tab=wishlist">
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:10px; align-items:end">
+          <div class="form-group" style="margin-bottom:0">
+            <label style="font-size:12px; color:var(--text-muted)">Title *</label>
+            <input type="text" name="title" class="form-control" placeholder="Book title" required>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label style="font-size:12px; color:var(--text-muted)">Author</label>
+            <input type="text" name="author" class="form-control" placeholder="Author name">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label style="font-size:12px; color:var(--text-muted)">ISBN</label>
+            <input type="text" name="isbn" class="form-control" placeholder="Optional">
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Wishlist items -->
+  {% if wishlist_items %}
+  {% for item in wishlist_items %}
+  <div class="copy-item">
+    <div style="flex:1">
+      <div style="font-size:15px; font-weight:500; color:var(--text); margin-bottom:2px">
+        {{ item.title }}
+        {% if item.fulfilled %}<span class="status-badge status-available" style="margin-left:8px; font-size:11px">Fulfilled</span>{% endif %}
+      </div>
+      {% if item.author %}<div style="font-size:13px; color:var(--text-muted)">by {{ item.author }}</div>{% endif %}
+      {% if item.isbn %}<div style="font-size:12px; color:var(--text-muted)">ISBN: {{ item.isbn }}</div>{% endif %}
+      <div style="font-size:12px; color:var(--text-muted); margin-top:4px">Added {{ item.created_at|date:"M d, Y" }}</div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center">
+      {% if not item.fulfilled %}
+      <form method="post" action="{% url 'wishlist-fulfilled' item.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'my-swapped-book' %}?tab=wishlist">
+        <button type="submit" class="btn btn-secondary btn-sm">Mark Found</button>
+      </form>
+      {% endif %}
+      <form method="post" action="{% url 'delete-wishlist' item.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'my-swapped-book' %}?tab=wishlist">
+        <button type="submit" class="btn btn-secondary btn-sm" style="color:#c96d6d">Remove</button>
+      </form>
+    </div>
   </div>
   {% endfor %}
+  {% else %}
+  <div class="empty-state">
+    <p>Your wishlist is empty. Add books you're looking for above.</p>
+  </div>
+  {% endif %}
+
+  <div style="margin-top:20px; text-align:center">
+    <a href="{% url 'request-board' %}" style="font-size:13px; color:var(--text-muted); text-decoration:underline">View community request board</a>
+  </div>
 </div>
-{% else %}
-<div class="empty-state">
-  <p>You haven't listed any books yet.</p>
-  <a href="{% url 'books' %}" class="btn btn-primary">Browse books to list</a>
-</div>
-{% endif %}
+
+<script>
+function switchShelfTab(tab) {
+  var isBooks = (tab === 'books');
+  document.getElementById('section-books').style.display    = isBooks ? 'block' : 'none';
+  document.getElementById('section-wishlist').style.display = isBooks ? 'none'  : 'block';
+
+  var activeStyle   = 'color:var(--text); border-bottom-color:var(--accent)';
+  var inactiveStyle = 'color:var(--text-muted); border-bottom-color:transparent';
+
+  var booksBtn    = document.getElementById('tab-btn-books');
+  var wishlistBtn = document.getElementById('tab-btn-wishlist');
+
+  // Apply styles via className trick — use inline style toggle
+  booksBtn.style.cssText    = booksBtn.style.cssText.replace(/color:[^;]+;?/g, '').replace(/border-bottom-color:[^;]+;?/g, '');
+  wishlistBtn.style.cssText = wishlistBtn.style.cssText.replace(/color:[^;]+;?/g, '').replace(/border-bottom-color:[^;]+;?/g, '');
+
+  if (isBooks) {
+    booksBtn.style.color = 'var(--text)';
+    booksBtn.style.borderBottomColor = 'var(--accent)';
+    wishlistBtn.style.color = 'var(--text-muted)';
+    wishlistBtn.style.borderBottomColor = 'transparent';
+  } else {
+    wishlistBtn.style.color = 'var(--text)';
+    wishlistBtn.style.borderBottomColor = 'var(--accent)';
+    booksBtn.style.color = 'var(--text-muted)';
+    booksBtn.style.borderBottomColor = 'transparent';
+  }
+  // Update URL without reload so back-button works correctly
+  var url = new URL(window.location.href);
+  if (isBooks) { url.searchParams.delete('tab'); }
+  else         { url.searchParams.set('tab', 'wishlist'); }
+  history.replaceState(null, '', url.toString());
+}
+// Initialize from URL param
+document.addEventListener('DOMContentLoaded', function() {
+  var params = new URLSearchParams(window.location.search);
+  switchShelfTab(params.get('tab') === 'wishlist' ? 'wishlist' : 'books');
+});
+</script>
 {% endblock %}
